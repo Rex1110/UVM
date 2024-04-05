@@ -1,7 +1,9 @@
 # **Rails**
 
 ## **1. Overview**
-![verification](https://github.com/Rex1110/UVM/assets/123956376/7f61acd3-f331-4878-b362-3e09b3e279fc)
+![verification](https://github.com/Rex1110/UVM/assets/123956376/cd6f5715-2cc6-41f5-9d3e-e02a07bb8136)
+
+
 
 
 
@@ -80,7 +82,10 @@ Result: 0
 
 在這我們的 transaction 裡包含一個 data queue，裡面裝著 "number of comming trains" 和 "departure order"，每個 cycle driver 會發送一個 data queue 的資料至 duv，當 duv 拉起 valid 訊號時，透過 virtual interface 把整個 data queue 送至 monitor，
 monitor 把資料送至 scoreboard 的同時，也將 "departure order" 寫到外部的 file 用來計算 golden，最後 scoreboatd 完成比較。
-![verification](https://github.com/Rex1110/UVM/assets/123956376/95abfb8c-0aa5-4735-9dc2-36213d7dbe59)
+
+![verification](https://github.com/Rex1110/UVM/assets/123956376/82ece5e3-011d-4d50-9577-c57b2ff80434)
+
+
 
 
 
