@@ -1,0 +1,13 @@
+"./duv/ATCONV.sv"
+"./duv/top.sv"
+"./ATCONV_tb.sv"
+
+"./uvm/transaction.sv"
+"./uvm/interface.sv"
+"./uvm/sequence.sv"
+"./uvm/driver.sv"
+"./uvm/monitor.sv"
+"./uvm/scoreboard.sv"
+"./uvm/agent.sv"
+"./uvm/environment.sv"
+"./uvm/test.sv"
