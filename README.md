@@ -1,7 +1,7 @@
 # Development environment
 
 This document provides details on the software and tool versions used in the development environment. \
-For further instructions, refer to the README.md files in each project folder and use the make help command to view specific commands.
+For further instructions, refer to the `README.md` files in each project folder and use the `make help` command to view specific commands.
 
 ## Simulator
 - **Irun Version:** 15.20-s039
