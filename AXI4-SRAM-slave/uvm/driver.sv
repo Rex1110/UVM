@@ -28,9 +28,9 @@ class driver extends uvm_driver #(transaction);
         vif.AWVALID <= 'd1;
 
         vif.WDATA   <= 'd0;
-        vif.WSTRB   <= 'b1111;
+        vif.WSTRB   <= 'd0;
         vif.WLAST   <= 'd0;
-        vif.WVALID  <= 'd1;
+        vif.WVALID  <= 'd0;
 
         vif.BREADY  <= 'd0;
     
@@ -45,12 +45,11 @@ class driver extends uvm_driver #(transaction);
 
         wait (vif.AWREADY);
         @(posedge vif.ACLK);
-
+        vif.AWVALID <= 'd0;
         for (int i = 0; i < vif.AWLEN + 1; i++) begin
-            if (i == 0) begin
-            end else begin
-                vif.WDATA <= 'd0;
-            end
+            vif.WVALID <= 'd1;
+            vif.WDATA  <= 'd0;
+            vif.WSTRB  <= 'b1111;
             if (i == vif.AWLEN) begin
                 vif.WLAST <= 'd1;
             end else begin
@@ -72,7 +71,7 @@ class driver extends uvm_driver #(transaction);
         vif.AWVALID <= 'd0;
                         
         vif.WDATA   <= 'd0;
-        vif.WSTRB   <= 'b0000;
+        vif.WSTRB   <= 'd0;
         vif.WLAST   <= 'd0;
         vif.WVALID  <= 'd0;
 
@@ -91,14 +90,10 @@ class driver extends uvm_driver #(transaction);
         vif.AWBURST <= 'd1;
         vif.AWVALID <= 'd1;
 
-        vif.WDATA   <= $urandom_range(min, max);
-        case (awsize)
-            0: vif.WSTRB <= 'b0001;
-            1: vif.WSTRB <= $urandom_range(1, 3);
-            2: vif.WSTRB <= $urandom_range(1, 15);
-        endcase
+        vif.WDATA   <= 'd0;
+        vif.WSTRB   <= 'd0;
         vif.WLAST   <= 'd0;
-        vif.WVALID  <= 'd1;
+        vif.WVALID  <= 'd0;
 
         vif.BREADY  <= 'd0;
     
@@ -113,17 +108,15 @@ class driver extends uvm_driver #(transaction);
 
         wait (vif.AWREADY);
         @(posedge vif.ACLK);
-
+        vif.AWVALID <= 'd0;
         for (int i = 0; i < vif.AWLEN + 1; i++) begin
-            if (i == 0) begin
-            end else begin
-                case (awsize)
-                    0: vif.WSTRB <= 'b0001;
-                    1: vif.WSTRB <= $urandom_range(1, 3);
-                    2: vif.WSTRB <= $urandom_range(1, 15);
-                endcase
-                vif.WDATA <= $urandom_range(min, max);
-            end
+            vif.WVALID <= 'd1;
+            case (awsize)
+                0: vif.WSTRB <= 'b0001;
+                1: vif.WSTRB <= $urandom_range(1, 3);
+                2: vif.WSTRB <= $urandom_range(1, 15);
+            endcase
+            vif.WDATA <= $urandom_range(min, max);
             if (i == vif.AWLEN) begin
                 vif.WLAST <= 'd1;
             end else begin
@@ -145,7 +138,7 @@ class driver extends uvm_driver #(transaction);
         vif.AWVALID <= 'd0;
                         
         vif.WDATA   <= 'd0;
-        vif.WSTRB   <= 'b0000;
+        vif.WSTRB   <= 'd0;
         vif.WLAST   <= 'd0;
         vif.WVALID  <= 'd0;
 
@@ -164,7 +157,7 @@ class driver extends uvm_driver #(transaction);
         vif.AWVALID <= 'd0;
 
         vif.WDATA   <= 'd0;
-        vif.WSTRB   <= 'b0000;
+        vif.WSTRB   <= 'd0;
         vif.WLAST   <= 'd0;
         vif.WVALID  <= 'd0;
 
@@ -182,7 +175,7 @@ class driver extends uvm_driver #(transaction);
 
         wait (vif.ARREADY);
         @(posedge vif.ACLK);
-
+        vif.ARVALID <= 'd0;
         
         vif.RREADY <= 'd1;
         for (int i = 0; i < vif.ARLEN + 1; i++) begin
@@ -200,7 +193,7 @@ class driver extends uvm_driver #(transaction);
         vif.AWVALID <= 'd0;
                         
         vif.WDATA   <= 'd0;
-        vif.WSTRB   <= 'b0000;
+        vif.WSTRB   <= 'd0;
         vif.WLAST   <= 'd0;
         vif.WVALID  <= 'd0;
 
