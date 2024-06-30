@@ -22,47 +22,64 @@
 
 ## 4. Verification flow
 
-最大 transaction size 為 64 bytes，因此 reference model 以 64 bytes 的暫存器進行模擬。
+![flow](https://github.com/Rex1110/UVM/assets/123956376/b115ccd7-42e4-483a-bd35-5404f2a559ff)
 
-### 1. Initial
-- **隨機產生寫入位置 AWADDR**：將 SRAM 從起始寫入位置至起始寫入位置 + 64 bytes 清零，同時將 reference model 中的 64 bytes 暫存器也清零。
-- **涉及**：Write transaction。
-- **參數設定**：AWSIZE=2, AWLEN=15 (4 bytes * 16 次)
+### Step1 Initial SRAM
+初始化 SRAM，由於最大 transaction size 為 64 bytes，因此 reference model 為 64 bytes。
 
-### 2. Write date
-- **隨機產生 AWSIZE (0, 1, 2), ARSIZE (0 ~ 15) 和 WDATA**：從初始化階段的起始位置開始，寫入相對應的數據。
-- **涉及**：Write transaction。
+### Step2 Copy SRAM data
+從即將寫入位置讀取 64 bytes 資料至 reference model，確保當前狀態和即將寫入 SRAM 位置資料相同。
 
-### 3. Read data
-- **起始位置**：與寫入階段的起始位置相同，確保讀取和寫入操作對應。
-- **隨機產生 ARSIZE (0, 1, 2)**：這個值決定每次讀取操作的數據大小。
-- **計算 AWLEN**：公式 `AWLEN = (((AWLEN + 1) * (2 ** AWSIZE)) / (2 ** ARSIZE)) - 1` 用於確保寫入和讀取操作涵蓋的總 bytes 數相同。
-- **涉及**：Read transaction（讀取事務）。
-- **ARSIZE 設定說明**：這一設定確保讀取操作符合系統對事務的限制，具體規則如下：
-  - **寫入總 bytes 數 > 0 且 ≤ 16 bytes**：ARSIZE 可設為 0, 1, 2。
-  - **寫入總 bytes 數 > 16 且 ≤ 32 bytes**：ARSIZE 可設為 1, 2。
-  - **寫入總 bytes 數 > 32 且 ≤ 64 bytes**：ARSIZE 必須設為 2。
+### Step3 Write transaction
+根據隨機生成的 AWLEN, AWSIZE, WSTRB, data 分別寫入 SRAM 和 reference model，寫入開始位置和 step2 讀取位置相同。
 
-這些規範確保讀取操作不會因為單個 transaction 的傳輸次數超過最大限制（16次）而出現問題。例如，當寫入超過 16 bytes 時，如果設定 ARSIZE 為 0（每個 transfer 1 byte），則會需要超過 16 次傳輸來完成讀取，這超過了系統的最大傳輸限制。因此添加了約束。
+### Step4 Read transaction
+根據隨機生成 ARLEN, ARSIZE 讀取 SRAM 資料用於接下來資料比較，而起始位置和 step2, step3 相同。
 
-基於以上設定，每次 test 都涉及兩次寫入一次讀取：
-1. 第一次寫入主要用於環境初始化。
-2. 第二次寫入根據初始化的空間寫入待檢查資料。
-3. 最後透過讀取相同位置的資料檢查是否正確。
+### Step5 Compare
+比較 reference model 中和 step4 讀取出來的資料是否吻合。
 
-![flow](https://github.com/Rex1110/UVM/assets/123956376/4aba4e14-3e70-46f3-add1-9ab604e2d409)
+### step2 ~ step5 重複執行, 直到所有 testcase 跑完。
+### 在驗證時，write transaction size 和 read transaction size 不一定相同，而是隨機產生，因此 write transaction 可能比較大又或是比較小，通過指令可以限制他的大小詳細請見 makefile 配置。
 
 ## 5. Verification result
 
 ### Example. 1 
-![ex1](https://github.com/Rex1110/UVM/assets/123956376/9a3d6377-fdc9-4e64-b420-80cfde17e570)
+
+#### State of SRAM before writing
+我們可以觀察到 SRAM 目前都為 0，這是由於 step1 會對其初始化，而第三個 testcase 也只是對其寫入三次，因此這個 SRAM 空間還尚未寫入過皆為 0。
+
+#### Write
+寫入位置為 7644，長度為 2，並且每個 size 為 2 bytes。
+
+#### Read
+讀取位置為 7644，長度為 10，並且每個 size 為 2 bytes。
+
+![ex1](https://github.com/Rex1110/UVM/assets/123956376/cd8ec63a-5bdf-4fe9-81ac-6adcaf7f92f0)
 
 
-### Example. 2 
-![ex2](https://github.com/Rex1110/UVM/assets/123956376/745b7ecc-fbe2-482b-8711-949544d16a0b)
 
-隨機生成10萬個 tansactions 皆通過。 \
-![result](https://github.com/Rex1110/UVM/assets/123956376/13f46c96-9e05-4243-9f7d-b2b7ae86450a)
+#### Example. 2 
+
+#### State of SRAM before writing
+我們可以觀察到 SRAM 目前都是有資料的，因為這是第 99995 個 testcase，也就是說我們已經進行 99995 次寫入，因此這區域之前被寫入過。
+
+#### Write
+寫入位置為 6576，長度為 9，並且每個 size 為 4 bytes。
+
+#### Read
+讀取位置為 6576，長度為 9，並且每個 size 為 1 bytes。
+
+![ex2](https://github.com/Rex1110/UVM/assets/123956376/f99c8924-803a-4098-b014-f00197eb76ab)
+
+
+
+### Result
+
+隨機生成50萬個 tansactions 皆通過。
+
+![result](https://github.com/Rex1110/UVM/assets/123956376/4253e474-8aec-4dc3-b58e-2675f637d629)
+
 
 
 
