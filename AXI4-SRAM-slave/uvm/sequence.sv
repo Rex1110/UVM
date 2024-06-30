@@ -7,6 +7,14 @@ class seq extends uvm_sequence #(transaction);
         super.new(name);
     endfunction
 
+
+    virtual task rst();
+        trans = transaction::type_id::create("trans");
+        start_item(trans);
+            trans.ARESETn = 'd0;
+        finish_item(trans);
+    endtask
+
     virtual task wrok();
         trans = transaction::type_id::create("trans");
         start_item(trans);
@@ -17,6 +25,7 @@ class seq extends uvm_sequence #(transaction);
 
     virtual task body();
         $display("\n\n");
+        seq::rst();
         repeat(`TESTCOUNT) seq::wrok();
     endtask
 endclass

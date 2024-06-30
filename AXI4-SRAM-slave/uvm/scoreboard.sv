@@ -22,24 +22,44 @@ class scoreboard extends uvm_scoreboard;
 
         for (int i = 0; i < 16; i++) begin
             $write("refModel[%04d] = %02h_%2h_%2h_%2h\t", trans.arAddrReg + 4*i, trans.refModel[4*i+3], trans.refModel[4*i+2], trans.refModel[4*i+1], trans.refModel[4*i]);
-            
-            $write("SRAM[%04d] = %02h_%2h_%2h_%2h", trans.arAddrReg + 4*i, trans.duv[4*i+3], trans.duv[4*i+2], trans.duv[4*i+1], trans.duv[4*i]);
-            if ((trans.refModel[4*i+3] != trans.duv[4*i+3]) || (trans.refModel[4*i+2] != trans.duv[4*i+2]) || (trans.refModel[4*i+1] != trans.duv[4*i+1]) || (trans.refModel[4*i] != trans.duv[4*i])) begin
-                $display("    FAIL");
+            if (trans.duv.size() >= 4*(i+1)) begin
+                $write("SRAM[%04d] = %02h_%2h_%2h_%2h", trans.arAddrReg + 4*i, trans.duv[4*i+3], trans.duv[4*i+2], trans.duv[4*i+1], trans.duv[4*i]);
+                if ((trans.refModel[4*i+3] != trans.duv[4*i+3]) || (trans.refModel[4*i+2] != trans.duv[4*i+2]) || (trans.refModel[4*i+1] != trans.duv[4*i+1]) || (trans.refModel[4*i] != trans.duv[4*i])) begin
+                    err++;
+                    $display("    FAIL");
+                end else begin
+                    $display("    PASS");
+                end
+            end else if (trans.duv.size() >= (4*(i+1) - 1)) begin
+                $write("SRAM[%04d] =    %2h_%2h_%2h", trans.arAddrReg + 4*i, trans.duv[4*i+2], trans.duv[4*i+1], trans.duv[4*i]);
+                if ((trans.refModel[4*i+2] != trans.duv[4*i+2]) || (trans.refModel[4*i+1] != trans.duv[4*i+1]) || (trans.refModel[4*i] != trans.duv[4*i])) begin
+                    err++;
+                    $display("    FAIL");
+                end else begin
+                    $display("    PASS");
+                end
+            end else if (trans.duv.size() >= (4*(i+1) - 2)) begin
+                $write("SRAM[%04d] =       %2h_%2h", trans.arAddrReg + 4*i, trans.duv[4*i+1], trans.duv[4*i]);
+                if ((trans.refModel[4*i+1] != trans.duv[4*i+1]) || (trans.refModel[4*i] != trans.duv[4*i])) begin
+                    err++;
+                    $display("    FAIL");
+                end else begin
+                    $display("    PASS");
+                end
+            end else if (trans.duv.size() >= (4*(i+1) - 3)) begin
+                $write("SRAM[%04d] =          %2h", trans.arAddrReg + 4*i, trans.duv[4*i]);
+                if (trans.refModel[4*i] != trans.duv[4*i]) begin
+                    err++;
+                    $display("    FAIL");
+                end else begin
+                    $display("    PASS");
+                end
             end else begin
-                $display("    PASS");
+                $display("");
             end
         end
-
-        
-        for (int i = 0; i < 64; i++) begin
-            if (trans.refModel[i] != trans.duv[i]) begin
-                err++;
-                $display("Failed, refModel[%02d] = %2h, .duv[%02d] = %2h", trans.arAddrReg + 4*i, trans.arAddrReg + 4*i, trans.refModel[i], trans.arAddrReg + 4*i, trans.duv[i]);
-            end
-        end
-        
         $display("\n******************************************************************\n\n");
+        trans.duv = {};
         if (err == 0) begin
             pass++;
         end else begin

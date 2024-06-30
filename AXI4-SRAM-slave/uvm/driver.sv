@@ -214,6 +214,9 @@ class driver extends uvm_driver #(transaction);
         forever begin
             seq_item_port.get_next_item(trans);
                 if (trans.ARESETn == 'b0) begin
+                    for (int i = 0; i < 16384; i++) begin
+                        driver::rst(64 * i);
+                    end
                 end else begin
                     trans.randomize();
                     `ifdef AWLEN
@@ -224,16 +227,16 @@ class driver extends uvm_driver #(transaction);
                         trans.AWSIZE = `AWSIZE;
                         assert (0 <= `AWSIZE && `AWSIZE <= 2) else $fatal("AWSIZE must be between 0 and 2");
                     `endif
-                    trans.ARSIZE = transaction::getArsize(trans.AWLEN, trans.AWSIZE);
                     `ifdef ARSIZE
                         trans.ARSIZE = `ARSIZE;
                         assert (0 <= `ARSIZE && `ARSIZE <= 2) else $fatal("ARSIZE must be between 0 and 2");
                     `endif
-                    assert (((trans.AWLEN + 'd1) * (2 ** trans.AWSIZE)) % (2 ** trans.ARSIZE) == 0) else $fatal("Must observe (AWLEN + 1) * (2 ** AWSIZE) % (2 ** ARSIZE)");
-                    assert (((trans.AWLEN + 'd1) * (2 ** trans.AWSIZE)) / (2 ** trans.ARSIZE) <= 16) else $fatal("Must observe (AWLEN + 1) * (2 ** AWSIZE) / (2 ** ARSIZE) <= 15");
-                    trans.ARLEN  = transaction::getArlen(trans.AWLEN, trans.AWSIZE, trans.ARSIZE);
+                    `ifdef ARLEN
+                        trans.ARLEN = `ARLEN;
+                        assert (0 <= `ARLEN && `ARLEN <= 15) else $fatal("ARLEN must be between 0 and 15");
+                    `endif
                     vif.spaceReset = 1;
-                    driver::rst(trans.AWADDR);
+                    driver::RMODE(trans.ARADDR, 15, 2);
                     vif.spaceReset = 0;
                     driver::WMODE(trans.AWADDR, trans.AWLEN, trans.AWSIZE, (2**32)-1, 2**31);
                     driver::RMODE(trans.ARADDR, trans.ARLEN, trans.ARSIZE);

@@ -25,8 +25,8 @@ class transaction extends uvm_sequence_item;
 
             logic   [`AXI_IDS_BITS-1:0  ]   ARID;
     rand    logic   [`AXI_ADDR_BITS-1:0 ]   ARADDR;
-            logic   [`AXI_LEN_BITS-1:0  ]   ARLEN;
-            logic   [`AXI_SIZE_BITS-1:0 ]   ARSIZE;
+    rand    logic   [`AXI_LEN_BITS-1:0  ]   ARLEN;
+    rand    logic   [`AXI_SIZE_BITS-1:0 ]   ARSIZE;
             logic   [1:0                ]   ARBURST;
             logic                           ARVALID;
             logic                           ARREADY;
@@ -39,38 +39,11 @@ class transaction extends uvm_sequence_item;
             logic                           RREADY;
 
             logic   [7:0                ]   refModel [0:63];
-            logic   [7:0                ]   duv      [0:63];
+            logic   [7:0                ]   duv      [$];
             logic   [`AXI_ADDR_BITS-1:0 ]   arAddrReg;
 
     function new(string name = "transaction");
         super.new(name);
-    endfunction
-
-    static function logic [`AXI_SIZE_BITS-1:0] getArsize(logic [`AXI_LEN_BITS-1:0] awlen, logic [`AXI_SIZE_BITS-1:0] awsize);
-        int byteNum;
-        logic [`AXI_SIZE_BITS-1:0] arsize;
-        byteNum = (2 ** awsize) * (awlen + 1);
-
-        if (byteNum % 2 != 0) begin
-            arsize = 'd0;
-        end else begin
-            if (byteNum <= 16) begin
-                if (byteNum % 4 == 0)   arsize = $urandom_range(0, 2);
-                else                    arsize = $urandom_range(0, 1);
-            end else if (byteNum <= 32) begin
-                if (byteNum % 4 == 0)   arsize = $urandom_range(1, 2);
-                else                    arsize = 'd1;
-            end else begin
-                arsize = 'd2;
-            end
-        end
-        return arsize;
-    endfunction
-
-    static function logic [`AXI_LEN_BITS-1:0] getArlen(logic [`AXI_LEN_BITS-1:0] awlen, logic [`AXI_SIZE_BITS-1:0] awsize, logic [`AXI_SIZE_BITS-1:0] arsize);
-        int byteNum;
-        byteNum = (2 ** awsize) * (awlen + 1);
-        return ((byteNum / (2 ** arsize)) - 1);
     endfunction
 
     constraint AWLENconstraint {
@@ -81,13 +54,23 @@ class transaction extends uvm_sequence_item;
         AWSIZE inside {'d0, 'd1, 'd2};
     }
 
+    constraint ARLENconstraint {
+        'd0 <= ARLEN <= 'b1111;
+    }
+
+    constraint ARSIZEconstraint {
+        ARSIZE inside {'d0, 'd1, 'd2};
+    }
+
     constraint AWADDRconstraint {
         AWADDR[1:0] == 'b00;
-        AWADDR < 'd16384;
+        AWADDR < 16384 * 4;
+        AWADDR + (2 ** (AWSIZE) * (AWLEN + 1)) <= 16384 * 4;
     }
 
     constraint ARADDRconstraint {
         ARADDR == AWADDR;
+        ARADDR + (2 ** (ARSIZE) * (ARLEN + 1)) <= 16384 * 4;
     }
 
 endclass
