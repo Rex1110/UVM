@@ -1,13 +1,14 @@
-## 1. Overview
+# **AXI4 SRAM slave**
+## **1. Overview**
 ![schematic](https://github.com/Rex1110/UVM/assets/123956376/dccab258-ae57-4de7-8a16-d6aface4e9c4)
 
-## 2. Verification target
+## **2. Verification target**
 先前 [formal verification 驗證的 AXI4](https://github.com/Rex1110/Formal-verification/tree/master/AXI4) 主要基於 MASTER 端 (CPU) 和 SLVAE 端 (SRAM) 彼此的 interface 控制訊號的行為是否符合規範，而並未實際檢查到 SLAVE 本身行為，
 在這項目中將透過 UVM 驗證 SLAVE 是否能正確處理不同 burst length 和 burst size 的讀寫操作。
 其中 SLAVE 最大支援 burst length 為 16，burst size 為 4 bytes，因此最大 transaction size 為 64 bytes。
 在這會產生不同的 AWLEN，AWSIZE，ARLEN，ARSIZE 進行相對應驗證。
 
-## 3. SRAM specification
+## **3. SRAM specification**
 
 | Feature               | Details           |
 |-----------------------|-------------------|
@@ -20,7 +21,7 @@
 | Burst size            | 1, 2, 4 bytes     |
 
 
-## 4. Verification flow
+## **4. Verification flow**
 
 ![flow](https://github.com/Rex1110/UVM/assets/123956376/b115ccd7-42e4-483a-bd35-5404f2a559ff)
 
@@ -42,7 +43,14 @@
 ### step2 ~ step5 重複執行, 直到所有 testcase 跑完。
 ### 在驗證時，write transaction size 和 read transaction size 不一定相同，而是隨機產生，因此 write transaction 可能比較大又或是比較小，通過指令可以限制他的大小詳細請見 makefile 配置。
 
-## 5. Verification result
+## **5. Result and code coverage**
+
+![code_coverage](https://github.com/user-attachments/assets/8c664031-0a24-4384-aba3-a5ea275d19aa)
+
+
+隨機生成50萬個 tansactions 皆通過。
+
+![result](https://github.com/Rex1110/UVM/assets/123956376/4253e474-8aec-4dc3-b58e-2675f637d629)
 
 ### Example. 1 
 
@@ -71,16 +79,4 @@
 讀取位置為 6576，長度為 9，並且每個 size 為 1 bytes。
 
 ![ex2](https://github.com/Rex1110/UVM/assets/123956376/f99c8924-803a-4098-b014-f00197eb76ab)
-
-
-
-### Result
-
-隨機生成50萬個 tansactions 皆通過。
-
-![result](https://github.com/Rex1110/UVM/assets/123956376/4253e474-8aec-4dc3-b58e-2675f637d629)
-
-
-
-
 
