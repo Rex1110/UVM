@@ -15,6 +15,14 @@ class seq extends uvm_sequence #(transaction);
     virtual task reset();
         $display("--------------------------------------------rst--------------------------------------------");
         trans = transaction::type_id::create("trans");
+        start_item(trans);
+            trans.reset = 1'b0;
+        finish_item(trans);
+
+        start_item(trans);
+            trans.reset = 1'b1;
+        finish_item(trans);
+
         repeat (3) begin
             start_item(trans);
                 trans.reset = 1'b1;

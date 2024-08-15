@@ -21,67 +21,76 @@ module rails(
 		end
 	end
 
-	logic	[9:0]	num;
+	logic	[8:0]	num;
 	always_ff @(posedge clk, posedge reset) begin
 		if (cnt == 'b0) begin
-			for (integer i = 0; i < 11; i++) begin
-				num[i] <= 'b0;
-			end
+			num <= 'd0;
 		end else begin
-			num[data] <= 'b1;
+			num[data - 'd1] <= 'b1;
 		end
 	end
 	always_comb begin
-		if (num[9])begin	
-			if 	(!num[8]) 	min = 'd8;
-			else if (!num[7]) 	min = 'd7;
-			else if (!num[6]) 	min = 'd6;
-			else if (!num[5]) 	min = 'd5;
-			else if (!num[4]) 	min = 'd4;
-			else if (!num[3]) 	min = 'd3;
-			else if (!num[2]) 	min = 'd2;
-			else			min = 'd1;
-		end	
-		else if (num[8])begin	
-			if 	(!num[7]) 	min = 'd7;
-			else if (!num[6]) 	min = 'd6;
-			else if (!num[5]) 	min = 'd5;
-			else if (!num[4]) 	min = 'd4;
-			else if (!num[3]) 	min = 'd3;
-			else if (!num[2]) 	min = 'd2;
-			else			min = 'd1;
+		if (num[8])begin	
+			if 		(!num[7]) 	min = 'd8;
+			else if (!num[6]) 	min = 'd7;
+			else if (!num[5]) 	min = 'd6;
+			else if (!num[4]) 	min = 'd5;
+			else if (!num[3]) 	min = 'd4;
+			else if (!num[2]) 	min = 'd3;
+			else if (!num[1]) 	min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
 		end	
 		else if (num[7])begin	
-			if 	(!num[6]) 	min = 'd6;
-			else if (!num[5]) 	min = 'd5;
-			else if (!num[4]) 	min = 'd4;
-			else if (!num[3]) 	min = 'd3;
-			else if (!num[2]) 	min = 'd2;
-			else			min = 'd1;
+			if 		(!num[6]) 	min = 'd7;
+			else if (!num[5]) 	min = 'd6;
+			else if (!num[4]) 	min = 'd5;
+			else if (!num[3]) 	min = 'd4;
+			else if (!num[2]) 	min = 'd3;
+			else if (!num[1])   min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
 		end	
 		else if (num[6])begin	
-			if 	(!num[5]) 	min = 'd5;
-			else if (!num[4]) 	min = 'd4;
-			else if (!num[3]) 	min = 'd3;
-			else if (!num[2]) 	min = 'd2;
-			else			min = 'd1;
+			if 		(!num[5]) 	min = 'd6;
+			else if (!num[4]) 	min = 'd5;
+			else if (!num[3]) 	min = 'd4;
+			else if (!num[2]) 	min = 'd3;
+			else if (!num[1]) 	min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
 		end	
 		else if (num[5])begin	
-			if 	(!num[4]) 	min = 'd4;
-			else if (!num[3]) 	min = 'd3;
-			else if (!num[2]) 	min = 'd2;
-			else			min = 'd1;
+			if 		(!num[4]) 	min = 'd5;
+			else if (!num[3]) 	min = 'd4;
+			else if (!num[2]) 	min = 'd3;
+			else if (!num[1]) 	min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
 		end	
 		else if (num[4])begin	
-			if 	(!num[3]) 	min = 'd3;
-			else if (!num[2]) 	min = 'd2;
-			else			min = 'd1;
+			if 		(!num[3]) 	min = 'd4;
+			else if (!num[2]) 	min = 'd3;
+			else if (!num[1]) 	min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
 		end	
 		else if (num[3])begin	
-			if 	(!num[2]) 	min = 'd2;
-			else			min = 'd1;
+			if 		(!num[2])	min = 'd3;
+			else if (!num[1])	min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
 		end
-		else 				min = 'd1;
+		else if (num[2])begin	
+			if 		(!num[1])	min = 'd2;
+			else if (!num[0]) 	min = 'd1;
+			else				min = 'd0;
+		end
+		else if (num[1])begin	
+			if 	(!num[0]) 		min = 'd1;
+			else				min = 'd0;
+		end
+		else 					min = 'd0;
 	end
 	
 	assign valid = ((cnt != 'b0) && (min > data)) || (cnt == 4'b1) ? 1'b1 : 1'b0;

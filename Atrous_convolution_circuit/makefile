@@ -1,5 +1,5 @@
-TOPMODULE = rails_tb
-TESTNAME = test
+TOPMODULE = ATCONV_tb
+TESTNAME = test 
 UVM_VERBOSITY = UVM_MEDIUM
 
 SIMULATOR ?= vcs
@@ -36,7 +36,7 @@ define IRUN_CMD
 endef
 
 
-.PHONY: help run run_cpp clean
+.PHONY: help run clean
 
 help:
 	@echo " "
@@ -44,8 +44,7 @@ help:
 	@echo "|                           Available Targets                         "
 	@echo "|---------------------------------------------------------------------"
 	@echo "| 1. run          | Executes random UVM verification.                 "
-	@echo "| 2. cpp_run      | Compiles 'golden.cpp' into an executable.         "
-	@echo "| 3. clean        | Cleans directories for a clean build.             "
+	@echo "| 2. clean        | Cleans directories for a clean build.             "
 	@echo "|---------------------------------------------------------------------"
 	@echo "|                           Useful Parameters                         "
 	@echo "|---------------------------------------------------------------------"
@@ -53,10 +52,10 @@ help:
 	@echo "| 2. VCD          | If set to 1, dump waveform, default: $(VCD).     "
 	@echo "| 3. SIMULATOR    | Choose simulator: vcs or irun, default: $(SIMULATOR)."
 	@echo "======================================================================"
-	@echo " "
+	@echo " "	
 
 
-run: clean run_cpp
+run: clean
 	@if [ "$(SIMULATOR)" = "vcs" ] || [ "$(SIMULATOR)" = "VCS" ]; then \
 		$(VCS_CMD); \
 	elif [ "$(SIMULATOR)" = "irun" ] || [ "$(SIMULATOR)" = "IRUN" ]; then \
@@ -65,11 +64,9 @@ run: clean run_cpp
 		echo "Unsupported simulator: $(SIMULATOR)"; \
 		exit 1; \
 	fi
-	@rm -rf ./*.txt
-
-run_cpp:
-	g++ golden.cpp -o a.out
+	@rm -rf ./*.dat
 
 clean:
-	rm -rf *.out *.log *.key *.rc *.conf *.history BSSLib.lib++ nWaveLog vfastLog INCA_libs *.fsdb *.vcd
-	rm -rf csrc simv.daidir vdCovLog *.vdb simv .fsm.sch.verilog.xml *.h cov_work *.el
+	rm -rf *.out *.log *.key *.rc *.conf *.history BSSLib.lib++ nWaveLog vfastLog INCA_libs *.vcd verdiLog
+	rm -rf csrc simv.daidir vdCovLog *.vdb simv .fsm.sch.verilog.xml *.h cov_work
+	rm -rf ./failed_image/*.dat

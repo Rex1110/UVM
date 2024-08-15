@@ -24,10 +24,10 @@ module rails_tb();
         run_test("test");
     end
 
-    `ifdef FSDB
+    `ifdef VCD
         initial begin
-            $fsdbDumpfile("wave.fsdb");
-            $fsdbDumpvars(0, "+mda");
+            $dumpfile("wave.vcd");
+            $dumpvars(0, rails_tb);
         end
     `endif
 
