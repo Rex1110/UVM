@@ -89,7 +89,10 @@ e.g. 7= \
 ### Golden
 Golden 用 python 去寫，python 有個 eval() 的 function 它能夠直接算出數學表達式，只需要將 ASCII 轉為數字後執行 eval() 就完成了。
 
-## **7. Result**
+## **7. Result and code coverage**
+
+![code_coverage](https://github.com/user-attachments/assets/81118a4e-1525-40cf-b65f-a89ca4b2aae7)
+
 > [!NOTE]
 樹的數量 5 ~ 10\
 樹的深度 1 ~ 7\
