@@ -69,4 +69,4 @@ run: clean
 clean:
 	rm -rf *.out *.log *.key *.rc *.conf *.history BSSLib.lib++ nWaveLog vfastLog INCA_libs *.vcd verdiLog
 	rm -rf csrc simv.daidir vdCovLog *.vdb simv .fsm.sch.verilog.xml *.h cov_work
-	rm -rf ./failed_image/*.dat
+	rm -rf ./failed_image/*.dat *.conf *.rc

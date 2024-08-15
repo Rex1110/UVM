@@ -25,12 +25,13 @@ class seq extends uvm_sequence #(transaction);
         trans = transaction::type_id::create("trans");
         start_item(trans);
             trans.rst = 1'b0;
+            trans.startWork = 1'b0;
         finish_item(trans);
-        repeat (3) begin
-            start_item(trans);
-                trans.rst = 1'b1;
-            finish_item(trans);
-        end
+        start_item(trans);
+            trans.rst = 1'b1;
+            trans.startWork = 1'b0;
+        finish_item(trans);
+
     endtask
     
     virtual task tree(ref logic [7:0] q[$]);
@@ -77,6 +78,7 @@ class seq extends uvm_sequence #(transaction);
         q[0].push_back(61); // =
         start_item(trans);
             trans.rst = 1'b0;
+            trans.startWork = 1'b1;
             trans.data_queue = q[0];
         finish_item(trans);
         

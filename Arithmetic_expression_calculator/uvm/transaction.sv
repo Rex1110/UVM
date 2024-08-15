@@ -1,6 +1,7 @@
 class transaction extends uvm_sequence_item;
     `uvm_object_utils(transaction)
-
+    
+    logic           startWork;
     logic           rst;
     logic           ready;
     logic [31:0]    result;

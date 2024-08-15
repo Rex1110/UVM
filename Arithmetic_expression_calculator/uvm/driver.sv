@@ -33,6 +33,7 @@ class driver extends uvm_driver #(transaction);
                         @(posedge vif.clk);
                     end
                 end
+                vif.startWork <= trans.startWork;
                 @(posedge vif.clk);
             seq_item_port.item_done();
         end

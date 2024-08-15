@@ -22,7 +22,7 @@ class monitor extends uvm_monitor;
     virtual task run_phase(uvm_phase phase);
         trans = transaction::type_id::create("trans");
         forever begin
-            if (!vif.rst && vif.finish) begin
+            if (!vif.rst && vif.finish && vif.startWork) begin
                 file = $fopen("./testcase.dat", "w");
                 for (int i = 0; i < vif.data_queue.size()-1; i++) begin
                     $fwrite(file, "%0d ", vif.data_queue[i]);
