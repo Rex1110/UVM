@@ -103,7 +103,10 @@ C++ 的做法是直接將他完整還原，
 
 
 
-## **7. Result**
+## **7. Result and code coverage**
+
+![code_coverage](https://github.com/user-attachments/assets/ea22a742-f331-4902-8ca2-b8e7feaddb91)
+
 > [!NOTE]
 隨機生成 20000 組測試案例 \
 通過占比 20000 / 20000  \
@@ -113,9 +116,3 @@ Result 為 DUT 結果
 ![Result1](https://github.com/Rex1110/UVM/assets/123956376/936da0f4-abda-421c-93eb-8cbf08adda02)
 
 ![Result2](https://github.com/Rex1110/UVM/assets/123956376/0cdf30c4-4355-46dd-9092-f19e0282f847)
-
-
-
-
-
-
