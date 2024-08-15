@@ -1,3 +1,5 @@
+# **Atrous convolution circuit**
+
 ## **1. Overview**
 ![verification](https://github.com/Rex1110/UVM/assets/123956376/58660f76-d6f2-4be3-8181-c70a36817b14)
 
@@ -128,7 +130,12 @@ image_addr_xx.dat 錯誤存在的 memory address
 
 
 
-## **8. Result**
+## **8. Result and code coverage**
+
+
+![code_coverage](https://github.com/user-attachments/assets/4d86913b-6c92-4bcf-9058-6749c1840621)
+
+
 > [!NOTE]
 隨機生成 2000 組測試案例 \
 通過占比 2000 / 2000
