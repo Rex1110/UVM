@@ -130,7 +130,9 @@
 在這裡如果指令參數 IMAGE != "" 也就是有指定特定圖像，將啟用 direct test，而除了 UVM 生成的照片，也可以使用實際的照片計算。如果 dut 與 golden 不符，會將每個錯誤的 index, golden 和 dut 的結果輸出到外部 file，根據 index 可以快速在波型中直接定位出錯點。
 
 
-## **7. Result**
+## **7. Result and code coverage**
+
+![code_coverage](https://github.com/user-attachments/assets/ccb38422-a2fb-4142-8222-14df92888df0)
 
 > [!NOTE]
 隨機生成 50 組測試案例 \
