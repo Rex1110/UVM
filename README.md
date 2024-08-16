@@ -4,6 +4,7 @@ This document provides details on the software and tool versions used in the dev
 For further instructions, refer to the `README.md` files in each project folder and use the `make help` command to view specific commands.
 
 ## Simulator
+- **VCS Version:** U-2023.03_Full64
 - **Irun Version:** 15.20-s039
 
 ## Compiler
