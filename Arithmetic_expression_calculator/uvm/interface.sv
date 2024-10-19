@@ -6,6 +6,7 @@ interface duv_if();
     logic           ready;
     logic           finish;
     logic           startWork;
+    logic           valid;
 
     logic [ 7:0]    data_queue[$];
 endinterface

@@ -6,9 +6,9 @@ module AEC(
     input        [7:0]  ascii_in,
     
     output logic        finish,
-    output logic [31:0] result
+    output logic [31:0] result,
+    output logic        valid
 );
-
 
     parameter IDLE              = 3'd0;
     parameter RECEIVE1          = 3'd1;
@@ -28,6 +28,79 @@ module AEC(
     logic [7:0] o_data_op;
 
     logic [7:0] DecNum;
+
+    logic [7:0] last_OP;
+
+    logic [5:0] left_parenthese;
+
+    always_ff @(posedge clk, posedge rst) begin
+        if (rst || next_state == IDLE) begin
+            left_parenthese <= 'd0;
+        end else begin
+            if (ascii_in == 'd40) begin
+                left_parenthese <= left_parenthese + 'd1;
+            end else if (ascii_in == 'd41) begin
+                left_parenthese <= left_parenthese - 'd1;
+            end else begin
+                left_parenthese <= left_parenthese;
+            end
+        end
+    end
+
+    always_ff @(posedge clk, posedge rst) begin
+        if (rst) begin
+            last_OP <= 8'b1111_1111;
+        end else begin
+            if (next_state == IDLE) begin
+                last_OP <= 8'b1111_1111;
+            end else if (ascii_in != 'd61) begin
+                last_OP <= ascii_in;
+            end else begin
+                last_OP <= last_OP;
+            end
+        end
+    end
+
+    always_comb begin
+        if ((left_parenthese - 1) == 'b11_1110) begin // 多右括號
+            valid = 'b0;
+        end else if (state == RECEIVE1 && (in[7:0] == 'd41 || in[7:0] == 'd42 || in[7:0] == 'd43 || in[7:0] == 'd45)) begin // 起頭直接非數字或左括號
+            valid = 'b0;
+        end else if (finish && left_parenthese != 'd0) begin // 結束的時候 仍然有括號
+            valid = 'b0;
+        // 以下情況皆為數字重疊 or 符號重疊 or 右括號疊數字
+        end else if ((last_OP > 8'd47 && last_OP < 8'd58) || last_OP > 8'd96 && last_OP <= 'd102) begin // 數字
+            // 數字, (
+            if ((ascii_in > 8'd47 && ascii_in < 8'd58) || (ascii_in > 8'd96 && ascii_in < 'd103) || ascii_in == 'd40) begin
+                valid = 'b0;
+            end else begin
+                valid = 'b1;
+            end
+        end else if (last_OP == 'd40) begin // (
+            // ), * + -, =
+            if (ascii_in == 'd41 || ascii_in == 'd42 || ascii_in == 'd43 || ascii_in == 'd45 || ascii_in == 'd61) begin
+                valid = 'b0;
+            end else begin
+                valid = 'b1;
+            end
+        end else if (last_OP == 'd41) begin // )
+            // 數字, (
+            if ((ascii_in > 8'd47 && ascii_in < 8'd58) || (ascii_in > 8'd96 && ascii_in < 'd103) || ascii_in == 'd40) begin
+                valid = 'b0;
+            end else begin
+                valid = 'b1;
+            end
+        end else if (last_OP == 'd42 || last_OP =='d43 || last_OP == 'd45) begin // * + -
+            // ) * + - =
+            if (ascii_in == 'd41 || ascii_in == 'd42 || ascii_in == 'd43 || ascii_in == 'd45 || ascii_in == 'd61) begin
+                valid = 'b0;
+            end else begin
+                valid = 'b1;
+            end
+        end else begin
+            valid = 'b1;
+        end
+    end
 
     always_comb begin
         if (ascii_in > 8'd47 && ascii_in < 8'd58)
@@ -169,6 +242,10 @@ module AEC(
             end
             default: next_state = IDLE;
         endcase
+
+        if (valid == 0) begin
+            next_state = IDLE;
+        end
     end
 
     always_ff @(posedge clk, posedge rst) begin
@@ -208,9 +285,8 @@ module AEC(
             in <= in;
     end
 
-
     assign result = (state == RECEIVE1) ? in[7:0] : src1;
-    assign finish = (next_state == IDLE);
+    assign finish = ((next_state == IDLE) && (state != IDLE));
 endmodule
 
 

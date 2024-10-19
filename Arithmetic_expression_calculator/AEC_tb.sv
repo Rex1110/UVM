@@ -13,7 +13,8 @@ module AEC_tb();
         .ascii_in   (vif.ascii_in),
 
         .result     (vif.result  ),
-        .finish     (vif.finish  )
+        .finish     (vif.finish  ),
+        .valid      (vif.valid   )
     );
     
     initial begin
@@ -28,7 +29,7 @@ module AEC_tb();
 
     `ifdef VCD
         initial begin
-            $dumpfile("wave.vcd");
+            $dumpfile("wave.vcd.fsdb");
             $dumpvars(0, AEC_tb);
         end
     `endif

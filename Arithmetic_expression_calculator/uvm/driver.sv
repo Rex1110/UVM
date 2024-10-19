@@ -20,20 +20,18 @@ class driver extends uvm_driver #(transaction);
             seq_item_port.get_next_item(trans);
                 vif.data_queue = trans.data_queue;
                 vif.rst <= trans.rst;
-                foreach (trans.data_queue[i]) begin
-                    if (i == 0) begin
-                        vif.ready <= 1'b1;
-                    end else begin
-                        vif.ready <= 1'b0;
-                    end
+                vif.startWork <= trans.startWork;
+                for (int i = 0; i < trans.data_queue.size(); i++) begin
+                    vif.ready <= (i == 0) ? 'b1 : 'b0;
                     vif.ascii_in <= trans.data_queue[i];
-                    if (trans.data_queue[i] == 8'd61) begin
+                    @(posedge vif.clk);
+                    
+                    if (vif.ascii_in == 8'd61) begin
                         wait (vif.finish == 1'b1);
                     end else begin
-                        @(posedge vif.clk);
+                        if (vif.valid == 0) break;
                     end
                 end
-                vif.startWork <= trans.startWork;
                 @(posedge vif.clk);
             seq_item_port.item_done();
         end

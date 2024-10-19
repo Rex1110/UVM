@@ -3,6 +3,7 @@ class scoreboard extends uvm_scoreboard;
 
     int temp = 1;
     logic [31:0] golden;
+    logic valid;
     int file;
     string line;
     uvm_analysis_imp #(transaction, scoreboard) imp;
@@ -25,32 +26,52 @@ class scoreboard extends uvm_scoreboard;
 
         $system("python3 golden.py");
         file = $fopen("./golden.dat", "r");
-        if ($fgets(line, file) == 0) begin
-            $display("Failed to get golden");
-        end else begin
-            $sscanf(line, "%d", golden);
-        end
-        $fclose(file);
-        
-        
-        if (golden != trans.result) begin
-            fail++;
-            $display("Correct answer is %0d", $signed(golden));
-            $display("Your    answer is %0d", $signed(trans.result));
-            $display("FAILED");
-            file = $fopen("./data.dat", "a");
-            $fwrite(file, "Testcase %0d\n", temp-1);
-            foreach (trans.data_queue[i]) begin
-                $fwrite(file, "%0d ", trans.data_queue[i]);
-            end
-            $fwrite(file, "\n");
-            $fclose(file);
-        end else begin
-            pass++;
-            $display("Correct answer is %0d", $signed(golden));
-            $display("Your    answer is %0d", $signed(trans.result));
-            $display("PASSED");
+        $fscanf(file, "%d\n", valid);
+        if (valid == 1) begin
+            $fscanf(file, "%d\n", golden);
         end
 
+        $fclose(file);
+        
+        if (valid == 1) begin
+            if (valid != trans.valid || golden != trans.result) begin
+                fail++;
+                $display("Correct answer is %0d", $signed(golden));
+                $display("Your    answer is %0d", $signed(trans.result));
+                $display("FAILED");
+                file = $fopen("./data.dat", "a");
+                $fwrite(file, "Testcase %0d\n", temp-1);
+                foreach (trans.data_queue[i]) begin
+                    $fwrite(file, "%0d ", trans.data_queue[i]);
+                end
+                $fwrite(file, "\n");
+                $fclose(file);
+            end else begin
+                pass++;
+                $display("Correct answer is %0d", $signed(golden));
+                $display("Your    answer is %0d", $signed(trans.result));
+                $display("PASSED");
+            end
+        end else begin
+            if (trans.valid) begin
+                fail++;
+                $display("Correct answer is does not exist");
+                $display("Your    answer is exist");
+                $display("FAILED");
+                file = $fopen("./data.dat", "a");
+                $fwrite(file, "Testcase %0d\n", temp-1);
+                foreach (trans.data_queue[i]) begin
+                    $fwrite(file, "%0d ", trans.data_queue[i]);
+                end
+                $fwrite(file, "\n");
+                $fclose(file);
+
+            end else begin
+                pass++;
+                $display("Correct answer is does not exist");
+                $display("Your    answer is does not exist");
+                $display("PASSED");
+            end
+        end
     endfunction
 endclass

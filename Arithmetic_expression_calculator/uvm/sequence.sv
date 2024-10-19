@@ -38,21 +38,45 @@ class seq extends uvm_sequence #(transaction);
         int cnt = $urandom_range(`TREE_DEPTH_MIN, `TREE_DEPTH_MAX);
         num n = new();
         n.randomize();
-        q.push_back(n.opd1);
+        case ($urandom_range(0, 20)) 
+            0: begin // 開頭是 *, -, +, (, ) 機率是 1 /20
+                case ($urandom_range(0, 2))
+                    0: q.push_back(n.op);
+                    1: q.push_back(40);
+                    2: q.push_back(41);
+                endcase
+            end
+            // 正常情況
+            default: q.push_back(n.opd1);
+        endcase
+        
         while (cnt--) begin
             n.randomize();
-            case ($urandom_range(0, 5))
-                0, 1: begin
-                    q.push_front(n.op);
-                    q.push_front(n.opd1);
-                end 
-                2, 3: begin
-                    q.push_back(n.op);
-                    q.push_back(n.opd1);
+             case ($urandom_range(0, 30))
+                0: begin // 出現單個數字或是符號 這會導致出現 之後出現連續符號 或是 數字的情況
+                    case ($urandom_range(0, 3))
+                        0: q.push_back(n.op);
+                        1: q.push_back(n.opd1);
+                        2: q.push_back(40);
+                        3: q.push_back(41);
+                    endcase
                 end
-                4, 5: begin // 40 = (, 41 = )
-                    q.push_front(40);
-                    q.push_back(41);
+                // 正常情況
+                default: begin
+                    case($urandom_range(0, 2))
+                        0: begin
+                            q.push_front(n.op);
+                            q.push_front(n.opd1);
+                        end
+                        1: begin
+                            q.push_back(n.op);
+                            q.push_back(n.opd1);
+                        end
+                        2: begin
+                            q.push_front(40);
+                            q.push_back(41);
+                        end
+                    endcase
                 end
             endcase
         end
@@ -65,10 +89,23 @@ class seq extends uvm_sequence #(transaction);
         foreach (q[i]) seq::tree(q[i]);
 
         for (int i = 1; i < q.size(); i++) begin
-            case ($urandom_range(0, 2))
-                0: q[0].push_back(42); // *
-                1: q[0].push_back(43); // +
-                2: q[0].push_back(45); // -
+            case ($urandom_range(0, 20))
+                // 連接處出現數字或是左or右括號
+                0: begin
+                    case($urandom_range(0, 2))
+                        0: q[0].push_back($urandom_range(48, 57));
+                        1: q[0].push_back($urandom_range(97, 102));
+                        2: q[0].push_back($urandom_range(40, 41));
+                    endcase
+                end
+                // 正常樹的連接
+                default: begin
+                    case($urandom_range(0, 2))
+                        0: q[0].push_back(42); // *
+                        1: q[0].push_back(43); // +
+                        2: q[0].push_back(45); // -
+                    endcase
+                end
             endcase
             foreach (q[i][j]) begin
                 q[0].push_back(q[i][j]);
@@ -84,6 +121,10 @@ class seq extends uvm_sequence #(transaction);
         
     endtask
 
+
+    task falseSeq();
+
+    endtask
 
     virtual task body();
         repeat (3) seq::rst();
