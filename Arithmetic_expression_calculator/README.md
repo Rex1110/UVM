@@ -1,4 +1,16 @@
 # Arithmetic Expression Calculator
+
+### 2024/10/19 更新說明：新增異常情況處理以及新增異常測資
+- **變更詳情**：
+  - 新增異常檢測，如下圖。 \
+    ![image](https://github.com/user-attachments/assets/06d8fad5-0c01-4d08-8a1f-b637deaefe27) \
+    ![image](https://github.com/user-attachments/assets/413d838d-4433-43e7-9aad-61e6b3225942)
+
+- **變更原因**：
+  - 2024/10/18 面談 MTK 的時候，剛好展示了這個系統，當問到異常的處理，因為當時課堂提供的測資都是正常的，因此設計並未加入異常處理，後來自己寫 constraint 的時候也是基於正常情況撰寫，當下顯得有點不足QQ，所以就將異常情況加上去，順便把異常測資產生也加入，替下次面談做準備。
+
+-------------------------------------------------------------------------
+
 ## **1. Overview**
 ![verification](https://github.com/Rex1110/UVM/assets/123956376/2c3d5880-2fd3-4f8f-b6e2-7ecc67023c6a)
 
