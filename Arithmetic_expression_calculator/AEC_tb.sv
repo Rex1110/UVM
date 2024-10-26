@@ -38,7 +38,8 @@ module AEC_tb();
 
     // ) num
     cov_41_num: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd41) && vif.ascii_in inside {'d48, 'd49, 'd50, 'd51, 'd52, 'd53, 'd54, 'd55, 'd56, 'd57, 'd97, 'd98, 'd99, 'd100, 'd101, 'd102} );
-
+    // ) (
+    cov_41_40: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd41) && vif.ascii_in == 'd40 );
 
     // * )
     cov_42_41: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd42) && vif.ascii_in == 'd41 );
