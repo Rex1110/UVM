@@ -1,5 +1,32 @@
 # Arithmetic Expression Calculator
 
+### 2024/10/25 更新說明：新增 cover property 檢測隨機生成非法組合是否都有出現
+
+  - 以下為非法情況表格，current 為當前 symbol，prohibit 為接下來若出現則會產生非法組合的測試案例 \
+    撰寫 cover property 確保我們對於非法案例都有產出來
+    | Current    | Prohibit          |
+    |------------|-------------------|
+    | (          | *, +, -, =        |
+    | )          | 0 ~ f             |
+    | *          | ), *, +, -, =     |
+    | +          | ), *, +, -, =     |
+    | -          | ), *, +, -, =     |
+    | 0 ~ f      | 0 ~ f, (          |
+
+    範例: 用於確保發生過，其餘 property 在 AEC_tb.sv 中
+    ```systemverilog
+    // ( *
+    cov_40_42: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd40) && vif.ascii_in == 'd42 );
+    // ( +
+    cov_40_43: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd40) && vif.ascii_in == 'd43 );
+    // ( -
+    cov_40_45: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd40) && vif.ascii_in == 'd45 );
+    // ( =
+    cov_40_61: cover property ( @(posedge vif.clk) $past(vif.ascii_in == 'd40) && vif.ascii_in == 'd61 );
+    ```
+
+-------------------------------------------------------------------------
+
 ### 2024/10/19 更新說明：新增異常情況處理以及新增異常測資
 - **變更詳情**：
   - 新增異常檢測，如下圖。 \
