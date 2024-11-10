@@ -1,5 +1,15 @@
 # Arithmetic Expression Calculator
 
+### 2024/11/10 更新說明: Coverage improve
+- 把 coverage 打滿, toggle coverage 因為 input 只包含 ASCII characters 0-9, a-f, (, ), *, +, -, =, 所以部分 bit 是不會翻轉的
+
+![coverage](https://github.com/user-attachments/assets/8e584f12-206c-4e66-8dcf-92d400d35b10)
+
+- Assert coverage 皆有觸發
+
+![image](https://github.com/user-attachments/assets/23740a36-5da3-44d5-9677-f4c6f0426772)
+
+
 ### 2024/10/25 更新說明：新增 cover property 檢測隨機生成非法組合是否都有出現
 
   - 以下為非法情況表格，current 為當前 symbol，prohibit 為接下來若出現則會產生非法組合的測試案例 \
