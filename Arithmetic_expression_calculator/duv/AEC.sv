@@ -24,7 +24,6 @@ module AEC(
     logic [6:0] cnt;                      // how many num in queue
     logic push_op, push_num;
     logic empty_op, empty_num;
-    logic [7:0] i_data_op;
     logic [7:0] o_data_op;
 
     logic [7:0] DecNum;
@@ -34,7 +33,9 @@ module AEC(
     logic [5:0] left_parenthese;
 
     always_ff @(posedge clk, posedge rst) begin
-        if (rst || next_state == IDLE) begin
+        if (rst) begin
+            left_parenthese <= 'd0;
+        end else if (next_state == IDLE) begin
             left_parenthese <= 'd0;
         end else begin
             if (ascii_in == 'd40) begin
@@ -69,9 +70,11 @@ module AEC(
         end else if (finish && left_parenthese != 'd0) begin // 結束的時候 仍然有括號
             valid = 'b0;
         // 以下情況皆為數字重疊 or 符號重疊 or 右括號疊數字
-        end else if ((last_OP > 8'd47 && last_OP < 8'd58) || last_OP > 8'd96 && last_OP <= 'd102) begin // 數字
+        end else if ((last_OP > 8'd47 && last_OP < 8'd58) || last_OP > 8'd96 && last_OP != 'b1111_1111) begin // 數字
             // 數字, (
-            if ((ascii_in > 8'd47 && ascii_in < 8'd58) || (ascii_in > 8'd96 && ascii_in < 'd103) || ascii_in == 'd40) begin
+            if ((ascii_in > 8'd47 && ascii_in < 8'd58) || ascii_in > 8'd96) begin
+                valid = 'b0;
+            end else if (ascii_in == 'd40) begin
                 valid = 'b0;
             end else begin
                 valid = 'b1;
@@ -85,7 +88,9 @@ module AEC(
             end
         end else if (last_OP == 'd41) begin // )
             // 數字, (
-            if ((ascii_in > 8'd47 && ascii_in < 8'd58) || (ascii_in > 8'd96 && ascii_in < 'd103) || ascii_in == 'd40) begin
+            if ((ascii_in > 8'd47 && ascii_in < 8'd58) || ascii_in > 8'd96) begin
+                valid = 'b0;
+            end else if (ascii_in == 'd40) begin
                 valid = 'b0;
             end else begin
                 valid = 'b1;
@@ -107,40 +112,17 @@ module AEC(
             DecNum = ascii_in - 8'd48; // 0 ~ 9
         else if (ascii_in > 8'd96)
             DecNum = ascii_in - 8'd87; // 10 ~ 15
-        else if ((ascii_in > 8'd39 && ascii_in < 8'd46) && ascii_in != 8'd44)
+        else if (ascii_in == 'd40 || ascii_in == 'd41 || ascii_in == 'd42 || ascii_in == 'd43 || ascii_in == 'd45)
             DecNum = ascii_in; // ()*+-
         else 
             DecNum = 8'd61;
     end
+    assign i_data_num = (next_state == PARSE) ? in[7:0] : sum;
+    assign push_op = (next_state == PARSE) && ((in[7:0] == 'd40 || in[7:0] == 'd42 || in[7:0] == 'd43 || in[7:0] == 'd45));
 
     always_comb begin
         if (next_state == PARSE)
-            i_data_op = in[7:0];
-        else
-            i_data_op = 8'b0;
-    end
-
-    always_comb begin
-        if (next_state == PARSE)
-            i_data_num = in[7:0];
-        else
-            i_data_num = sum;
-    end
-
-
-    always_comb begin
-        if (next_state == PARSE)
-            if (in[7:0] > 8'd39 && in[7:0] < 8'd46)
-                push_op = 1'b1;
-            else
-                push_op = 1'b0;
-        else
-                push_op = 1'b0;
-    end
-
-    always_comb begin
-        if (next_state == PARSE)
-            if (in[7:0] > 8'd39 && in[7:0] < 8'd46 || in[7:0] == 8'd61)
+            if (in[7:0] == 'd40 || in[7:0] == 'd41 || in[7:0] == 'd42 || in[7:0] == 'd43 || in[7:0] == 'd45)
                 push_num = 1'b0;
             else
                 push_num = 1'b1;
@@ -170,7 +152,7 @@ module AEC(
         .flush  (next_state == IDLE     ),
         .push   (push_op                ),
         .pop    ((next_state == CALUATE) || (next_state == CLEAR_PARENTHESES)),
-        .i_data (i_data_op              ),
+        .i_data (in[7:0]                ),
         .empty  (empty_op               ),
         .o_data (o_data_op              )
     );
@@ -215,11 +197,10 @@ module AEC(
             CALUATE: begin
                 if (cnt == 32'b0)
                     next_state = empty_op ? IDLE : CALUATE;
-                else if (in[7:0] == 8'd42) // *
-                    if (o_data_op == 8'd42) next_state = CALUATE;
-                    else                    next_state = PARSE;
+                else if (in[7:0] == 8'd42) // * 不會遇到連續兩個 * 
+                    next_state = PARSE;
                 else if ((in[7:0] == 8'd43) || (in[7:0] == 8'd45)) // + -
-                    if (o_data_op == 8'd42 || o_data_op == 8'd43 || o_data_op == 8'd45) next_state = CALUATE;
+                    if (o_data_op == 8'd43 || o_data_op == 8'd45) next_state = CALUATE;
                     else                                                                next_state = PARSE;
                 else // if (in[7:0] == 8'd41) // clear ()
                     if (o_data_op == 8'd40) next_state = CLEAR_PARENTHESES;
@@ -234,11 +215,9 @@ module AEC(
                 else if ((in[7:0] == 8'd43) || (in[7:0] == 8'd45))
                     if (o_data_op == 8'd42 || o_data_op == 8'd43 || o_data_op == 8'd45) next_state = CALUATE;
                     else                                                                next_state = PARSE;
-                else if (in[7:0] == 8'd41)
+                else //  if (in[7:0] == 8'd41)
                     if (o_data_op == 8'd40) next_state = CLEAR_PARENTHESES;
                     else                    next_state = CALUATE;
-                else
-                    next_state = PARSE;
             end
             default: next_state = IDLE;
         endcase
@@ -271,16 +250,12 @@ module AEC(
             in <= 8*`BUFFER_LEN'b0;
         else if (next_state == RECEIVE1)
             in <= DecNum;
-        else if (next_state == PARSE && DecNum != 8'd61)
-            in <= (in >> 8) + (DecNum << ((cnt - 1) * 8));
-        else if (next_state == PARSE && DecNum == 8'd61)
-            in <= (in >> 8);
+        else if (next_state == PARSE)
+            in <= (DecNum == 8'd61) ? (in >> 8) : (in >> 8) + (DecNum << ((cnt - 1) * 8));
         else if (next_state == CALUATE && DecNum != 8'd61)
             in <= (in + (DecNum << (cnt * 8)));
-        else if (next_state == CLEAR_PARENTHESES && DecNum != 8'd61)
-            in <= (in >> 8) + (DecNum << ((cnt - 1) * 8));
-        else if (next_state == CLEAR_PARENTHESES && DecNum == 8'd61)
-            in <= (in >> 8);
+        else if (next_state == CLEAR_PARENTHESES)
+            in <= (DecNum == 8'd61) ? (in >> 8) : (in >> 8) + (DecNum << ((cnt - 1) * 8));
         else
             in <= in;
     end
@@ -288,5 +263,4 @@ module AEC(
     assign result = (state == RECEIVE1) ? in[7:0] : src1;
     assign finish = ((next_state == IDLE) && (state != IDLE));
 endmodule
-
 

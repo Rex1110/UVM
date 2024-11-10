@@ -34,7 +34,7 @@ class scoreboard extends uvm_scoreboard;
         $fclose(file);
         
         if (valid == 1) begin
-            if (valid != trans.valid || golden != trans.result) begin
+            if (valid !== trans.valid || golden !== trans.result) begin
                 fail++;
                 $display("Correct answer is %0d", $signed(golden));
                 $display("Your    answer is %0d", $signed(trans.result));
