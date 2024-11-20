@@ -173,11 +173,11 @@ class driver extends uvm_driver #(transaction);
                     `endif
                     `ifdef AWSIZE
                         trans.AWSIZE = `AWSIZE;
-                        assert (0 <= `AWSIZE && `AWSIZE <= 2) else $fatal("AWSIZE must be between 0 and 2");
+                        assert (`AWSIZE == 2) else $fatal("AWSIZE must be 2");
                     `endif
                     `ifdef ARSIZE
                         trans.ARSIZE = `ARSIZE;
-                        assert (0 <= `ARSIZE && `ARSIZE <= 2) else $fatal("ARSIZE must be between 0 and 2");
+                        assert (`ARSIZE == 2) else $fatal("ARSIZE must be 2");
                     `endif
                     `ifdef ARLEN
                         trans.ARLEN = `ARLEN;
@@ -191,7 +191,7 @@ class driver extends uvm_driver #(transaction);
                     vif.spaceReset = 0;
                     driver::WMODE(trans, (2**32)-1, 2**31);
                     trans.ARLEN = $urandom_range(0, 15);
-                    trans.ARSIZE = $urandom_range(0, 2);
+                    trans.ARSIZE = 2;
                     driver::RMODE(trans);
                 end
                 vif.ARESETn <= trans.ARESETn;

@@ -56,7 +56,7 @@ class transaction extends uvm_sequence_item;
     }
 
     constraint AWSIZEconstraint {
-        AWSIZE inside {'d0, 'd1, 'd2};
+        AWSIZE inside {'d2};
     }
 
     constraint ARLENconstraint {
@@ -64,7 +64,7 @@ class transaction extends uvm_sequence_item;
     }
 
     constraint ARSIZEconstraint {
-        ARSIZE inside {'d0, 'd1, 'd2};
+        ARSIZE inside {'d2};
     }
 
     constraint AWADDRconstraint {
