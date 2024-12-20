@@ -1,12 +1,9 @@
 # **Rails**
 
+### 2024/12/20 更新說明：原本 golden 使用C++撰寫，現在改成 SystemVerilog 撰寫演算法，整體程式碼更清晰。
+
 ## **1. Overview**
 ![verification](https://github.com/Rex1110/UVM/assets/123956376/cd6f5715-2cc6-41f5-9d3e-e02a07bb8136)
-
-
-
-
-
 
 
 ## **2. Introduction**
@@ -23,11 +20,6 @@
 ## **3. I/O interface**
 
 ![IO interface](https://github.com/Rex1110/UVM/assets/123956376/2e185a90-1aff-4abe-b41d-a30e1fc2dcd7)
-
-
-
-
-
 
 
 
@@ -90,7 +82,7 @@ monitor 把資料送至 scoreboard 的同時，也將 "departure order" 寫到�
 
 
 
-### Golden
+### Golden (已經改為 SystemVerilog 撰寫，整體演算法相同)
 C++ 撰寫 Golden 作為我們的答案，
 程式碼在 golden.cpp，
 C++ 的做法是直接將他完整還原，
