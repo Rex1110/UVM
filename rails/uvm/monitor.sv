@@ -1,6 +1,5 @@
 class monitor extends uvm_monitor;
     `uvm_component_utils(monitor)
-    int file;
     virtual duv_if vif;
     transaction trans;
     uvm_analysis_port #(transaction) ap;
@@ -26,14 +25,11 @@ class monitor extends uvm_monitor;
                 trans.result = vif.result;
                 trans.data_queue = vif.data_queue;
 
-                // 將 data_queue 寫入外部 file
-                file = $fopen("./testcase.txt", "w");
                 foreach (trans.data_queue[i]) begin
                     if (i == 0) begin
                         $display("Number of coming trains = %-2d", trans.data_queue[i]);
                         $write("Departure order = ");
                     end else begin
-                        $fwrite(file, "%-0d", trans.data_queue[i]);
                         if (i == (trans.data_queue.size()-1)) begin
                             $display("%0d", trans.data_queue[i]);
                         end else begin
@@ -41,7 +37,6 @@ class monitor extends uvm_monitor;
                         end
                     end
                 end
-                $fclose(file);
                 // 送至 monitor
                 ap.write(trans);
 

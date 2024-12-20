@@ -18,7 +18,7 @@ class driver extends uvm_driver #(transaction);
         trans = transaction::type_id::create("trans");
         forever begin
             seq_item_port.get_next_item(trans);
-                vif.data_queue = trans.data_queue; // 用於傳送整筆至 monitor 所以使用 blocking
+                vif.data_queue = trans.data_queue; 
                 vif.reset <= trans.reset;
                 for (int i = 0; i < trans.data_queue.size(); i++) begin
                     vif.data  <= trans.data_queue[i];
