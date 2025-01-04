@@ -67,11 +67,11 @@ class transaction extends uvm_sequence_item;
     }
 
     constraint Memory_boundary_4KB_constraint {
-        (AWVALID == 1'b1) && (AWBURST == `INCR) 
-        -> ((AWADDR/(2**AWSIZE)*(2**AWSIZE)+((2**AWSIZE)*(AWLEN+1))) & 'hffff_f000) == (AWADDR & 'hffff_f000);
+        (AWVALID == 1'b1) && (AWBURST == `INCR)
+        -> (AWADDR % 4096) + (2 ** AWSIZE) * (AWLEN + 1) < 4096;
  
         (ARVALID == 1'b1) && (ARBURST == `INCR)  
-        -> ((ARADDR/(2**ARSIZE)*(2**ARSIZE)+((2**ARSIZE)*(ARLEN+1))) & 'hffff_f000) == (ARADDR & 'hffff_f000);
+        -> (ARADDR % 4096) + (2 ** ARSIZE) * (ARLEN + 1) < 4096;
     }
 
     constraint WDATA_constraint {
