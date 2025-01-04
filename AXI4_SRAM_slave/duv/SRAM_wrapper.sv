@@ -1,33 +1,33 @@
 module SRAM_wrapper(
-    input   ACLK,
-    input   ARESETn,
+    input                                   ACLK,
+    input                                   ARESETn,
 
-    input   [`AXI_IDS_BITS-1:0  ]   AWID,
-    input   [`AXI_ADDR_BITS-1:0 ]   AWADDR,
-    input   [`AXI_LEN_BITS-1:0  ]   AWLEN,
-    input   [`AXI_SIZE_BITS-1:0 ]   AWSIZE,
-    input   [1:0                ]   AWBURST,
-    input                           AWVALID,
-    output  logic                   AWREADY,
+    input   [`AXI_IDS_BITS-1:0  ]           AWID,
+    input   [`AXI_ADDR_BITS-1:0 ]           AWADDR,
+    input   [`AXI_LEN_BITS-1:0  ]           AWLEN,
+    input   [`AXI_SIZE_BITS-1:0 ]           AWSIZE,
+    input   [1:0                ]           AWBURST,
+    input                                   AWVALID,
+    output  logic                           AWREADY,
 
-    input   [`AXI_DATA_BITS-1:0 ]   WDATA,
-    input   [`AXI_STRB_BITS-1:0 ]   WSTRB,
-    input                           WLAST,
-    input                           WVALID,
-    output  logic                   WREADY,
+    input   [`AXI_DATA_BITS-1:0 ]           WDATA,
+    input   [`AXI_STRB_BITS-1:0 ]           WSTRB,
+    input                                   WLAST,
+    input                                   WVALID,
+    output  logic                           WREADY,
 
     output  logic   [`AXI_IDS_BITS-1:0  ]   BID,
     output  logic   [1:0                ]   BRESP,
     output  logic                           BVALID,
     input                                   BREADY,
 
-    input   [`AXI_IDS_BITS-1:0  ]   ARID,
-    input   [`AXI_ADDR_BITS-1:0 ]   ARADDR,
-    input   [`AXI_LEN_BITS-1:0  ]   ARLEN,
-    input   [`AXI_SIZE_BITS-1:0 ]   ARSIZE,
-    input   [1:0                ]   ARBURST,
-    input                           ARVALID,
-    output  logic                   ARREADY,
+    input   [`AXI_IDS_BITS-1:0  ]           ARID,
+    input   [`AXI_ADDR_BITS-1:0 ]           ARADDR,
+    input   [`AXI_LEN_BITS-1:0  ]           ARLEN,
+    input   [`AXI_SIZE_BITS-1:0 ]           ARSIZE,
+    input   [1:0                ]           ARBURST,
+    input                                   ARVALID,
+    output  logic                           ARREADY,
 
     output  logic   [`AXI_IDS_BITS-1:0  ]   RID,
     output  logic   [`AXI_DATA_BITS-1:0 ]   RDATA,
@@ -41,13 +41,19 @@ module SRAM_wrapper(
     logic [`AXI_DATA_BITS-1:0] DI;
     logic [`AXI_DATA_BITS-1:0] DO;
 
-    logic [`AXI_ADDR_BITS-1:0] ARADDR_reg;
-    logic [`AXI_ADDR_BITS-1:0] AWADDR_reg;
-    logic [`AXI_SIZE_BITS-1:0 ] arsizeReg, awsizeReg;
+    logic signed [`AXI_ADDR_BITS-1:0] AWADDR_Base, ARADDR_Base;
+
+    logic [1:0] AWBURST_reg, ARBURST_reg;
+
+    logic [`AXI_LEN_BITS-1:0  ] AWLEN_reg, ARLEN_reg;
+    logic [`AXI_SIZE_BITS-1:0 ] AWSIZE_reg, ARSIZE_reg;
 
     logic [2:0] state, next_state;
-    logic [1:0] awsize_cnt, arsize_cnt;
     logic [3:0] read_burst_cnt;
+
+    logic signed [7:0] wptr, rptr;
+    logic [`AXI_ADDR_BITS-1: 0] readUpperBound, writeUpperBound;
+
 
     localparam IDLE             = 3'd0;
     localparam READ_ADDRESS     = 3'd1;
@@ -75,11 +81,11 @@ module SRAM_wrapper(
                     next_state = IDLE;
                 end
             end 
-            WRITE_ADDRESS   : next_state = (AWVALID && AWREADY) ? WRITE_DATA : WRITE_ADDRESS;
+            WRITE_ADDRESS   : next_state = WRITE_DATA;
             WRITE_DATA      : next_state = (WVALID && WREADY && WLAST) ? WRITE_RESPONSE : WRITE_DATA;
             WRITE_RESPONSE  : next_state = (BVALID && BREADY) ? IDLE : WRITE_RESPONSE;
 
-            READ_ADDRESS    : next_state = (ARVALID && ARREADY) ? READ_DATA : READ_ADDRESS;
+            READ_ADDRESS    : next_state = READ_DATA;
             READ_DATA       : next_state = (RVALID && RREADY && RLAST) ? IDLE : READ_DATA;
 
             default         : next_state = IDLE;
@@ -94,47 +100,7 @@ module SRAM_wrapper(
 
     assign ARREADY  = (state == READ_ADDRESS) ? 1'b1 : 1'b0;
 
-    
-    always_ff @(posedge ACLK, negedge ARESETn) begin
-        if (~ARESETn) begin
-            arsizeReg <= 'd0;
-        end else if (ARVALID && ARREADY) begin
-            arsizeReg <= ARSIZE;
-        end else begin
-            arsizeReg <= arsizeReg;
-        end
-    end
-
-    always_ff @(posedge ACLK, negedge ARESETn) begin
-        if (~ARESETn) begin
-            awsizeReg <= 'd0;
-        end else if (AWVALID && AWREADY) begin
-            awsizeReg <= AWSIZE;
-        end else begin
-            awsizeReg <= awsizeReg;
-        end
-    end
-    always_comb begin
-        if (arsizeReg == 'd0) begin
-            if (arsize_cnt == 'd3) begin
-                RDATA = DO[7:0];
-            end else if (arsize_cnt == 'd2) begin
-                RDATA = DO[15:8];
-            end else if (arsize_cnt == 'd1) begin
-                RDATA = DO[23:16];
-            end else begin
-                RDATA = DO[31:24];
-            end
-        end else if (arsizeReg == 'd1) begin
-            if (arsize_cnt == 'd2) begin
-                RDATA = DO[15:0];
-            end else begin
-                RDATA = DO[31:16];
-            end
-        end else begin
-            RDATA = DO;
-        end
-    end
+    assign RDATA    = DO;
     assign RRESP    = `AXI_RESP_OKAY;
     assign RLAST    = ((state == READ_DATA) && (read_burst_cnt == 0)) ? 1'b1 : 1'b0;
 
@@ -150,101 +116,128 @@ module SRAM_wrapper(
         end
     end
 
-    // ADDR reg
     always_ff @(posedge ACLK, negedge ARESETn) begin
         if (~ARESETn) begin
-            read_burst_cnt  <= 4'd0;
-            ARADDR_reg      <= 32'd0;
+            ARBURST_reg<= 'd0;
+            ARLEN_reg  <= 'd0;
+            ARSIZE_reg <= 'd0;
+            ARADDR_Base<= 'd0;
+        end else if (ARVALID && ARREADY) begin
+            ARBURST_reg<= ARBURST;
+            ARLEN_reg  <= ARLEN;
+            ARSIZE_reg <= ARSIZE;
+            ARADDR_Base<= ARADDR;
         end else begin
-            if (ARVALID && ARREADY) begin
-                read_burst_cnt  <= ARLEN;
-                ARADDR_reg      <= ARADDR;
-            end else if (RVALID && RREADY) begin
-                read_burst_cnt  <= read_burst_cnt - 4'd1;
-                if (arsize_cnt == 'd0) begin
-                    ARADDR_reg <= ARADDR_reg + 'd4;
-                end else begin
-                    ARADDR_reg <= ARADDR_reg;
-                end
-            end
-        end
-    end
-    always_ff @(posedge ACLK, negedge ARESETn) begin
-        if (~ARESETn) begin
-            AWADDR_reg      <= 'd0;
-        end else begin
-            if (AWVALID && AWREADY) begin
-                AWADDR_reg      <= AWADDR;
-            end else if (WVALID && WREADY) begin
-                if (awsize_cnt == 'd0) begin
-                    AWADDR_reg <= AWADDR_reg + 'd4;
-                end else begin
-                    AWADDR_reg <= AWADDR_reg;
-                end
-            end
-        end
-    end
-
-    // burst cnt
-    always_ff @(posedge ACLK, negedge ARESETn) begin
-        if (~ARESETn) begin
-            arsize_cnt <= 'd0;
-        end else begin
-            if (ARVALID && ARREADY) begin
-                if (ARSIZE == 'd0) begin
-                    arsize_cnt <= 'd3;
-                end else if (ARSIZE == 'd1) begin
-                    arsize_cnt <= 'd2;
-                end else begin
-                    arsize_cnt <= 'd0;
-                end
-            end else if (RVALID && RREADY) begin
-                if (ARSIZE == 'd0) begin
-                    arsize_cnt <= arsize_cnt - 'd1;
-                end else if (ARSIZE == 'd1) begin
-                    arsize_cnt <= arsize_cnt - 'd2;
-                end else begin
-                    arsize_cnt <= 'd0;
-                end
-            end
+            ARBURST_reg<= ARBURST_reg;
+            ARLEN_reg  <= ARLEN_reg;
+            ARSIZE_reg <= ARSIZE_reg;
+            ARADDR_Base<= ARADDR_Base;
         end
     end
 
     always_ff @(posedge ACLK, negedge ARESETn) begin
         if (~ARESETn) begin
-            awsize_cnt <= 'd0;
+            AWBURST_reg<= 'd0;
+            AWLEN_reg  <= 'd0;
+            AWSIZE_reg <= 'd0;
+            AWADDR_Base<= 'd0;
+        end else if (AWVALID && AWREADY) begin
+            AWBURST_reg<= AWBURST;
+            AWLEN_reg  <= AWLEN;
+            AWSIZE_reg <= AWSIZE;
+            AWADDR_Base<= AWADDR;
         end else begin
-            if (AWVALID && AWREADY) begin
-                if (AWSIZE == 'd0) begin
-                    awsize_cnt <= 'd3;
-                end else if (AWSIZE == 'd1) begin
-                    awsize_cnt <= 'd2;
-                end else begin
-                    awsize_cnt <= 'd0;
-                end
-            end else if (WVALID && WREADY) begin
-                if (AWSIZE == 'd0) begin
-                    awsize_cnt <= awsize_cnt - 'd1;
-                end else if (AWSIZE == 'd1) begin
-                    awsize_cnt <= awsize_cnt - 'd2;
-                end else begin
-                    awsize_cnt <= 'd0;
-                end
+            AWBURST_reg<= AWBURST_reg;
+            AWLEN_reg  <= AWLEN_reg;
+            AWSIZE_reg <= AWSIZE_reg;
+            AWADDR_Base<= AWADDR_Base;
+        end
+    end
+
+    always_ff @(posedge ACLK, negedge ARESETn) begin
+        if (~ARESETn) begin
+            rptr <= 'd0;
+        end else if (ARVALID && ARREADY) begin
+            rptr <= 'd0;
+        end else if (RVALID && RREADY) begin
+            if (ARBURST_reg == 2'b00) begin
+                rptr <= rptr;
+            end else if (ARBURST_reg == 2'b01) begin
+                rptr <= rptr + 'd1;
+            end else begin
+                rptr <= (ARADDR_Base + $signed(((rptr + 1) << ARSIZE_reg))) >= readUpperBound ? rptr - ARLEN_reg : rptr + 'd1;
+            end
+        end else begin
+            rptr <= rptr;
+        end
+    end
+
+    always_ff @(posedge ACLK, negedge ARESETn) begin
+        if (~ARESETn) begin
+            wptr <= 'd0;
+        end else if (AWVALID && AWREADY) begin
+            wptr <= 'd0;
+        end else if (WVALID && WREADY) begin
+            if (AWBURST_reg == 2'b00) begin
+                wptr <= wptr;
+            end else if (AWBURST_reg == 2'b01) begin
+                wptr <= wptr + 'd1;
+            end else begin
+                wptr <= (AWADDR_Base + $signed(((wptr + 1) << AWSIZE_reg))) >= writeUpperBound ? wptr - AWLEN_reg : wptr + 'd1;
+            end
+        end else begin
+            wptr <= wptr;
+        end
+    end
+
+    always_ff @(posedge ACLK, negedge ARESETn) begin
+        if (~ARESETn) begin
+            read_burst_cnt <= 4'd0;
+        end else begin
+            if (ARVALID && ARREADY) begin
+                read_burst_cnt <= ARLEN;
+            end else if (RVALID && RREADY) begin
+                read_burst_cnt <= read_burst_cnt - 4'd1;
+            end else begin
+                read_burst_cnt <= read_burst_cnt;
             end
         end
     end
-    
+
+
+    always_comb begin
+        case (ARSIZE_reg)
+            2'b00: readUpperBound = (ARADDR_Base / (ARLEN_reg + 1)) * (ARLEN_reg + 1) + (ARLEN_reg + 1);
+            2'b01: readUpperBound = (ARADDR_Base / ((ARLEN_reg + 1) << 1)) * ((ARLEN_reg + 1) << 1) + ((ARLEN_reg + 1) << 1);
+            2'b10: readUpperBound = (ARADDR_Base / ((ARLEN_reg + 1) << 2)) * ((ARLEN_reg + 1) << 2) + ((ARLEN_reg + 1) << 2);
+        endcase
+    end
+
+    always_comb begin
+        case (AWSIZE_reg)
+            2'b00: writeUpperBound = (AWADDR_Base / (AWLEN_reg + 1)) * (AWLEN_reg + 1) + (AWLEN_reg + 1);
+            2'b01: writeUpperBound = (AWADDR_Base / ((AWLEN_reg + 1) << 1)) * ((AWLEN_reg + 1) << 1) + ((AWLEN_reg + 1) << 1);
+            2'b10: writeUpperBound = (AWADDR_Base / ((AWLEN_reg + 1) << 2)) * ((AWLEN_reg + 1) << 2) + ((AWLEN_reg + 1) << 2);
+        endcase
+    end
 
     always_comb begin
         if (state == WRITE_DATA) begin
-            A = AWADDR_reg[15:2];
+            A = (AWADDR_Base + $signed(wptr * (2 ** AWSIZE_reg))) >> 2;
         end else if (state == READ_ADDRESS) begin
             A = ARADDR[15:2];
         end else if (state == READ_DATA) begin
-            if (RVALID && RREADY && (arsize_cnt == 'd0)) begin
-                A = ARADDR_reg[15:2] + 14'd1;
+            if (RVALID && RREADY) begin
+                if (ARBURST_reg == 2'b00) begin
+                    A = ARADDR_Base >> 2;
+                end else if (ARBURST_reg == 2'b01) begin
+                    A = (ARADDR_Base + $signed(((rptr + 1) << ARSIZE_reg))) >> 2;
+                end else begin
+                    A = (ARADDR_Base + $signed(((rptr + 1) << ARSIZE_reg))) >= readUpperBound ? (ARADDR_Base + $signed(((rptr - ARLEN_reg) << ARSIZE_reg))) >> 2:
+                                                                                                       (ARADDR_Base + $signed(((rptr + 1) << ARSIZE_reg))) >> 2;    
+                end
             end else begin
-                A = ARADDR_reg[15:2];
+                A = (ARADDR_Base + $signed((rptr << ARSIZE_reg))) >> 2;
             end
         end else begin
             A = 'd0;
@@ -253,40 +246,8 @@ module SRAM_wrapper(
 
     always_comb begin
         if (WVALID && WREADY) begin
-            if (awsizeReg == 'd0) begin
-                case (awsize_cnt)
-                    'd0: begin
-                        WEB = WSTRB << 3;
-                        DI  = WDATA << 24;
-                    end
-                    'd1: begin
-                        WEB = WSTRB << 2;
-                        DI  = WDATA << 16;
-                    end
-                    'd2: begin
-                        WEB = WSTRB << 1;
-                        DI  = WDATA << 8;
-                    end
-                    'd3: begin
-                        WEB = WSTRB;
-                        DI  = WDATA;
-                    end
-                endcase
-            end else if (awsizeReg == 'd1) begin
-                case (awsize_cnt) 
-                    'd0: begin
-                        WEB = WSTRB << 2;
-                        DI  = WDATA << 16;
-                    end
-                    'd2: begin
-                        WEB = WSTRB;
-                        DI  = WDATA;
-                    end
-                endcase
-            end else begin
-                WEB = WSTRB;
-                DI  = WDATA;
-            end
+            WEB = WSTRB;
+            DI  = WDATA;
         end else begin
             WEB = 'd0;
             DI  = 'd0;

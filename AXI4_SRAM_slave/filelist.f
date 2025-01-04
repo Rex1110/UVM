@@ -1,4 +1,4 @@
-./include/AXI_define.svh
+./include/define.svh
 ./duv/AXI/Read_Arbiter.sv
 ./duv/AXI/Read_Address_Channel.sv
 ./duv/AXI/Read_Data_Channel.sv
@@ -18,5 +18,6 @@
 ./uvm/monitor.sv
 ./uvm/scoreboard.sv
 ./uvm/agent.sv
+./uvm/referenceModel.sv
 ./uvm/environment.sv
 ./uvm/test.sv

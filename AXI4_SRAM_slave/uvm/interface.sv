@@ -1,9 +1,7 @@
 interface duv_if;
-    logic                           startWork;
-    logic                           spaceReset;
     logic                           ACLK;
-    logic                           ARESETn;  
-                             
+    logic                           ARESETn;
+
     logic   [`AXI_IDS_BITS-1:0  ]   AWID;
     logic   [`AXI_ADDR_BITS-1:0 ]   AWADDR;
     logic   [`AXI_LEN_BITS-1:0  ]   AWLEN;
@@ -36,5 +34,5 @@ interface duv_if;
     logic   [1:0                ]   RRESP;
     logic                           RLAST;
     logic                           RVALID;
-    logic                           RREADY;
+    logic                           RREADY;  
 endinterface

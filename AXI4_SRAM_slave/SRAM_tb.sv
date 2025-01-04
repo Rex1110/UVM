@@ -2,7 +2,6 @@
 import uvm_pkg::*;
 
 module SRAM_tb;
-
     duv_if vif();
 
     SRAM_wrapper i_SRAM_wrapper(
@@ -45,7 +44,7 @@ module SRAM_tb;
     );
 
     initial begin
-        vif.ACLK = 1'b1;
+        vif.ACLK = 1'b0;
         forever #100 vif.ACLK = ~vif.ACLK;
     end
 
@@ -54,11 +53,152 @@ module SRAM_tb;
         run_test("test");
     end
     
-    `ifdef VCD
-        initial begin
-            $dumpfile("wave.vcd");
-            $dumpvars(0, SRAM_tb);
-        end
-    `endif
+    ///////////////////////////////////////////////
+    // AW
+    ///////////////////////////////////////////////
 
+    generate
+        for (genvar AWSIZE = 0; AWSIZE <= 2; AWSIZE++) begin: FIXED_ALIGNED_AWSIZE
+            for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.AWVALID && vif.AWREADY
+                        |->
+                        (vif.AWBURST == `FIXED) && (vif.AWADDR % (2 ** AWSIZE) == 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar AWSIZE = 1; AWSIZE <= 2; AWSIZE++) begin: FIXED_UNALIGNED_AWSIZE
+            for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.AWVALID && vif.AWREADY
+                        |->
+                        (vif.AWBURST == `FIXED) && (vif.AWADDR % (2 ** AWSIZE) != 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar AWSIZE = 0; AWSIZE <= 2; AWSIZE++) begin: INCR_ALIGNED_AWSIZE
+            for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.AWVALID && vif.AWREADY
+                        |->
+                        (vif.AWBURST == `INCR) && (vif.AWADDR % (2 ** AWSIZE) == 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar AWSIZE = 1; AWSIZE <= 2; AWSIZE++) begin: INCR_UNALIGNED_AWSIZE
+            for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.AWVALID && vif.AWREADY
+                        |->
+                        (vif.AWBURST == `INCR) && (vif.AWADDR % (2 ** AWSIZE) != 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar AWSIZE = 0; AWSIZE <= 2; AWSIZE++) begin: WRAP_ALIGNED_AWSIZE
+            for (genvar AWLEN = 1; AWLEN <= 15; AWLEN = (AWLEN << 1) + 1) begin: _AWLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.AWVALID && vif.AWREADY
+                        |->
+                        (vif.AWBURST == `INCR) && (vif.AWADDR % (2 ** AWSIZE) == 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    ///////////////////////////////////////////////
+    // AR
+    ///////////////////////////////////////////////
+
+    generate
+        for (genvar ARSIZE = 0; ARSIZE <= 2; ARSIZE++) begin: FIXED_ALIGNED_ARSIZE
+            for (genvar ARLEN = 0; ARLEN <= 15; ARLEN++) begin: _ARLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.ARVALID && vif.ARREADY
+                        |->
+                        (vif.ARBURST == `FIXED) && (vif.ARADDR % (2 ** ARSIZE) == 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar ARSIZE = 1; ARSIZE <= 2; ARSIZE++) begin: FIXED_UNALIGNED_ARSIZE
+            for (genvar ARLEN = 0; ARLEN <= 15; ARLEN++) begin: _ARLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.ARVALID && vif.ARREADY
+                        |->
+                        (vif.ARBURST == `FIXED) && (vif.ARADDR % (2 ** ARSIZE) != 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar ARSIZE = 0; ARSIZE <= 2; ARSIZE++) begin: INCR_ALIGNED_ARSIZE
+            for (genvar ARLEN = 0; ARLEN <= 15; ARLEN++) begin: _ARLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.ARVALID && vif.ARREADY
+                        |->
+                        (vif.ARBURST == `INCR) && (vif.ARADDR % (2 ** ARSIZE) == 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar ARSIZE = 1; ARSIZE <= 2; ARSIZE++) begin: INCR_UNALIGNED_ARSIZE
+            for (genvar ARLEN = 0; ARLEN <= 15; ARLEN++) begin: _ARLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.ARVALID && vif.ARREADY
+                        |->
+                        (vif.ARBURST == `INCR) && (vif.ARADDR % (2 ** ARSIZE) != 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+
+    generate
+        for (genvar ARSIZE = 0; ARSIZE <= 2; ARSIZE++) begin: WRAP_ALIGNED_ARSIZE
+            for (genvar ARLEN = 1; ARLEN <= 15; ARLEN = (ARLEN << 1) + 1) begin: _ARLEN
+                cov: cover property (
+                    @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
+                        vif.ARVALID && vif.ARREADY
+                        |->
+                        (vif.ARBURST == `INCR) && (vif.ARADDR % (2 ** ARSIZE) == 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
+                    )
+                );
+            end
+        end
+    endgenerate
+   
 endmodule

@@ -1,34 +1,33 @@
 class transaction extends uvm_sequence_item;
     `uvm_object_utils(transaction)
-            logic                           startWork;
             logic                           ACLK;
-            logic                           ARESETn;  
-                             
+    rand    logic                           ARESETn;
+
     rand    logic   [`AXI_IDS_BITS-1:0  ]   AWID;
     rand    logic   [`AXI_ADDR_BITS-1:0 ]   AWADDR;
     rand    logic   [`AXI_LEN_BITS-1:0  ]   AWLEN;
     rand    logic   [`AXI_SIZE_BITS-1:0 ]   AWSIZE;
-            logic   [1:0                ]   AWBURST;
-            logic                           AWVALID;
+    rand    logic   [1:0                ]   AWBURST;
+    rand    logic                           AWVALID;
             logic                           AWREADY;
 
-            logic   [`AXI_DATA_BITS-1:0 ]   WDATA;
-            logic   [`AXI_STRB_BITS-1:0 ]   WSTRB;
-            logic                           WLAST;
-            logic                           WVALID;
+    rand    logic   [`AXI_DATA_BITS-1:0 ]   WDATA[$];
+    rand    logic   [`AXI_STRB_BITS-1:0 ]   WSTRB;
+    rand    logic                           WLAST;
+    rand    logic                           WVALID;
             logic                           WREADY;
 
     rand    logic   [`AXI_IDS_BITS-1:0  ]   BID;
     rand    logic   [1:0                ]   BRESP;
             logic                           BVALID;
-            logic                           BREADY;
+    rand    logic                           BREADY;
 
     rand    logic   [`AXI_IDS_BITS-1:0  ]   ARID;
     rand    logic   [`AXI_ADDR_BITS-1:0 ]   ARADDR;
     rand    logic   [`AXI_LEN_BITS-1:0  ]   ARLEN;
     rand    logic   [`AXI_SIZE_BITS-1:0 ]   ARSIZE;
-            logic   [1:0                ]   ARBURST;
-            logic                           ARVALID;
+    rand    logic   [1:0                ]   ARBURST;
+    rand    logic                           ARVALID;
             logic                           ARREADY;
 
     rand    logic   [`AXI_IDS_BITS-1:0  ]   RID;
@@ -36,46 +35,47 @@ class transaction extends uvm_sequence_item;
     rand    logic   [1:0                ]   RRESP;
             logic                           RLAST;
             logic                           RVALID;
-            logic                           RREADY;
-
-            logic   [7:0                ]   refModel [0:63];
-            logic   [7:0                ]   duv      [$];
-            logic   [`AXI_ADDR_BITS-1:0 ]   arAddrReg;
+    rand    logic                           RREADY;
 
     function new(string name = "transaction");
         super.new(name);
     endfunction
 
-    constraint IDconstraint {
+    constraint ID_constraint {
         AWID == BID;
         ARID == RID;
     }
 
-    constraint AWLENconstraint {
-        'd0 <= AWLEN <= 'b1111;
+    constraint AxBURST_constraint {
+        AWBURST inside {`FIXED, `INCR, `WRAP};
+        ARBURST inside {`FIXED, `INCR, `WRAP};
     }
 
-    constraint AWSIZEconstraint {
-        AWSIZE inside {'d2};
+    constraint AxSIZE_constraint {
+        AWSIZE inside {`BYTE, `HALFWORD, `WORD};
+        ARSIZE inside {`BYTE, `HALFWORD, `WORD};
     }
 
-    constraint ARLENconstraint {
-        'd0 <= ARLEN <= 'b1111;
+    constraint AxADDR_constraint {
+        (AWVALID == 1'b1) && (AWBURST == `WRAP) -> (AWADDR % (2 ** AWSIZE)) == 0;
+        (ARVALID == 1'b1) && (ARBURST == `WRAP) -> (ARADDR % (2 ** ARSIZE)) == 0;
     }
 
-    constraint ARSIZEconstraint {
-        ARSIZE inside {'d2};
+    constraint AxLEN_constraint {
+        (AWVALID == 1'b1) && (AWBURST == `WRAP) -> AWLEN inside {'d1, 'd3, 'd7, 'd15};
+        (ARVALID == 1'b1) && (ARBURST == `WRAP) -> ARLEN inside {'d1, 'd3, 'd7, 'd15};
     }
 
-    constraint AWADDRconstraint {
-        AWADDR[1:0] == 'b00;
-        AWADDR < 16384 * 4;
-        AWADDR + (2 ** (AWSIZE) * (AWLEN + 1)) <= 16384 * 4;
+    constraint Memory_boundary_4KB_constraint {
+        (AWVALID == 1'b1) && (AWBURST == `INCR) 
+        -> ((AWADDR/(2**AWSIZE)*(2**AWSIZE)+((2**AWSIZE)*(AWLEN+1))) & 'hffff_f000) == (AWADDR & 'hffff_f000);
+ 
+        (ARVALID == 1'b1) && (ARBURST == `INCR)  
+        -> ((ARADDR/(2**ARSIZE)*(2**ARSIZE)+((2**ARSIZE)*(ARLEN+1))) & 'hffff_f000) == (ARADDR & 'hffff_f000);
     }
 
-    constraint ARADDRconstraint {
-        ARADDR == AWADDR;
-        ARADDR + (2 ** (ARSIZE) * (ARLEN + 1)) <= 16384 * 4;
+    constraint WDATA_constraint {
+        WDATA.size() == (AWLEN + 1);
     }
-
+    
 endclass
