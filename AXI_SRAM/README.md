@@ -19,7 +19,7 @@
 
 ## **3. Verification target**
 
-先前課程設計的 SRAM wrapper 不支援 narrow transfer 和 unaligned transfer，AxBURST 也僅支援 INCR mode，AxLEN 僅支援 0 和 3， 後續修改支援 narrow transfer 和 unaligned Transfer，並且 AxLEN 的擴展至 0 到 15。同時，AxBURST 的也支援 FIXED、INCR 和 WRAP 三種 mode。
+先前課程設計的 SRAM wrapper 不支援 narrow transfer 和 unaligned transfer，AxBURST 也僅支援 INCR mode，AxLEN 支援 0 和 3， 後續修改支援 narrow transfer 和 unaligned Transfer，並且 AxLEN 的擴展至 0 到 15。同時，AxBURST 的也支援 FIXED、INCR 和 WRAP 三種 mode。
 
 根據設計改進，歸納出以下驗證目標：
 
@@ -39,12 +39,10 @@
 
 在驗證過程中，主要分為三個部分執行。以下將逐一說明：
 
-
 ### **第一部分：寫入操作**
 
-從記憶體的最低位置 `mem[0]` 開始發起寫入操作，隨機生成不同的 **AWBURST**、**AWSIZE** 和 **AWLEN**，地址持續遞增，直到到達記憶體邊界 `mem[65535]`，如下圖所示。
-![image](https://github.com/user-attachments/assets/5124fa20-54da-425e-a8e9-0dfb2a28bde9)
-
+從記憶體的最低位置 `mem[0]` 開始發起寫入操作，隨機生成不同的 **AWBURST**、**AWSIZE** 和 **AWLEN**，地址持續遞增，直到到達記憶體邊界 `mem[ffff]`，如下圖所示。
+![image](https://github.com/user-attachments/assets/20cd2009-6fa8-4e5b-acdf-4d05afddcb77)
 
 
 #### **第一筆 Transaction**
@@ -52,13 +50,17 @@
 - **AWSIZE**：`0`（每筆寫入資料為 1 byte，屬於 Narrow Transfer）
 - **AWLEN**：`5`（傳輸 6 筆資料）
 
- **WSTRB** 與位置分配如下：
-- **Transfer 1**：WSTRB = `4'b0001`, ADDR = `[0]`
-- **Transfer 2**：WSTRB = `4'b0010`, ADDR = `[0]`
-- **Transfer 3**：WSTRB = `4'b0100`, ADDR = `[0]`
-- **Transfer 4**：WSTRB = `4'b1000`, ADDR = `[0]`
-- **Transfer 5**：WSTRB = `4'b0001`, ADDR = `[4]`
-- **Transfer 6**：WSTRB = `4'b0010`, ADDR = `[4]`
+其中 WSTRB 是由 tb 控制，用於拉起有效的 byte lane。詳細說明可參考 [AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>)，描述 write strobe 和 narrow transfer 的機制。
+
+| Transfer    | ADDR | WSTRB | Description |
+|:-----------:|:----:|:--------:|:--------:|
+| Transfer 1  |0x0000|    0001     |    寫 0x0000     |
+| Transfer 2  |0x0000|    0010     |    寫 0x0001     |
+| Transfer 3  |0x0000|    0100     |    寫 0x0002     |
+| Transfer 4  |0x0000|    1000     |    寫 0x0003     |
+| Transfer 5  |0x0004|    0001     |    寫 0x0004     |
+| Transfer 6  |0x0004|    0010     |    寫 0x0005     |
+
 
 **寫入範圍**：`mem[0]` ~ `mem[5]`
 
@@ -67,13 +69,15 @@
 #### **第二筆 Transaction**
 - **AWBURST**：`FIXED`
 - **AWSIZE**：`2`（每筆寫入資料為 4 bytes）
-- **AWLEN**：`2`（傳輸 3 筆資料）
+- **AWLEN**：`1`（傳輸 2 筆資料）
 
 由於前一筆資料寫到 `mem[5]`，本次 Transaction 從 `mem[6]` 開始。屬於 **Unaligned Transfer**。
 
- **WSTRB** 與位置分配如下：
-- **Transfer 1**：WSTRB = `4'b1100`, ADDR = `[4]`
-- **Transfer 2**：WSTRB = `4'b1100`, ADDR = `[4]`
+| Transfer    | ADDR | WSTRB | Description |
+|:-----------:|:----:|:--------:|:--------:|
+| Transfer 1  |0x0004|    1100     |    寫 0x0006, 0x0007     |
+| Transfer 2  |0x0004|    1100     |    寫 0x0006, 0x0007     |
+
 
 **寫入範圍**：`mem[6]` ~ `mem[7]`
 
@@ -86,10 +90,11 @@
 
 由於前一筆資料寫到 `mem[7]`，本次 Transaction 從 `mem[8]` 開始。
 
- **WSTRB** 與位置分配如下：
-- **Transfer 1**：WSTRB = `4'b1111`, ADDR = `[8]`
+| Transfer    | ADDR | WSTRB | Description |
+|:-----------:|:----:|:--------:|:--------:|
+| Transfer 1  |0x0008|    1111     |    寫 0x0008, 0x0009, 0x000a, 0x000b     |
 
-**寫入範圍**：`mem[8]` ~ `mem[11]`
+**寫入範圍**：`mem[8]` ~ `mem[b]`
 
 ---
 
@@ -98,25 +103,26 @@
 - **AWSIZE**：`1`（每筆寫入資料為 2 bytes，屬於 Narrow Transfer）
 - **AWLEN**：`3`（傳輸 4 筆資料）
 
-由於前一筆資料寫到 `mem[11]`，本次 Transaction 從 `mem[12]` 開始。WRAP 模式在到達最高地址後會繞回最低地址。
+由於前一筆資料寫到 `mem[b]`，本次 Transaction 從 `mem[c]` 開始。WRAP 模式在到達最高地址後會繞回最低地址。
 
- **WSTRB** 與位置分配如下：
-- **Transfer 1**：WSTRB = `4'b0011`, ADDR = `[12]`
-- **Transfer 2**：WSTRB = `4'b1100`, ADDR = `[12]`
-- **Transfer 3**：WSTRB = `4'b0011`, ADDR = `[8]`
-- **Transfer 4**：WSTRB = `4'b1100`, ADDR = `[8]`
+| Transfer    | ADDR | WSTRB | Description |
+|:-----------:|:----:|:--------:|:--------:|
+| Transfer 1  |0x000c|    0011     |    寫 0x000c, 0x000d     |
+| Transfer 2  |0x000c|    1100     |    寫 0x000e, 0x000f     |
+| Transfer 3  |0x0008|    0011     |    寫 0x0008, 0x0009     |
+| Transfer 4  |0x0008|    1100     |    寫 0x000a, 0x000b     |
 
-**寫入範圍**：`mem[8]` ~ `mem[15]`
+**寫入範圍**：`mem[8]` ~ `mem[f]`
 
-**補充說明**：在 `mem[12]` 寫入兩筆後，地址繞回到 `mem[8]`。這屬於 [AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>) 中 WRAP 的描述。WRAP 模式主要用於填充 Cache Line，當 Critical Word 位於末端時，WRAP 能減少等待時間，優先取得所需資料。
+**補充說明**：在 `mem[c]` 寫入兩筆後，地址繞回到 `mem[8]`。這屬於 [AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>) 中 WRAP 的描述。WRAP 模式主要用於填充 Cache Line，當 Critical Word 位於末端時，WRAP 能減少等待時間，優先取得所需資料。
 
-第一階段會不斷執行寫入操作直到 `mem[65535]`，並同步更新 Reference Model。
+第一階段會不斷執行寫入操作直到 `mem[ffff]`，並同步更新 Reference Model。
 
 ---
 
 ### **第二部分：讀取操作**
 
-在第二階段，我們將從寫入操作轉為讀取操作。讀取操作從記憶體的最低位置 `mem[0]` 開始，隨機生成不同的 **ARBURST**、**ARSIZE** 和 **ARLEN**，地址持續遞增，直到到達記憶體邊界 `mem[65535]`。讀取的每筆資料會與 Reference Model 即時比對，確保資料一致性，如下圖所示。
+在第二階段，我們將從寫入操作轉為讀取操作。讀取操作從記憶體的最低位置 `mem[0]` 開始，隨機生成不同的 **ARBURST**、**ARSIZE** 和 **ARLEN**，地址持續遞增，直到到達記憶體邊界 `mem[ffff]`。讀取的每筆資料會與 Reference Model 即時比對，確保資料一致性，如下圖所示。
 ![image](https://github.com/user-attachments/assets/fcd2b287-48c6-4ad4-adb1-7887a51fb165)
 
 
@@ -165,7 +171,7 @@ constraint AxLEN_constraint {
 
 ### **5.4 A burst must not cross a 4KB address boundary**
 一個挺有意思的東西，在[AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>) address structure 有提到避免跨過 4KB boundary，
-假設起始地址位於 0x0000 ~ 0x0fff 之中，如果今天突發會到 0x1xxx 是要被禁止的，那這主要是因為我們一個 4KB(page size) 區塊對應一個獨立的記憶體或設備，跨過這個邊界可能會導致地址被映射到非法讀寫記憶體區段或是不同的設備，這會造成無法預期行為，也不是應該出現行為，如果真要跨你得拆成兩次傳輸。
+假設起始地址位於 0x0000 ~ 0x0fff 之中，如果今天突發會到 0x1xxx 是要被禁止的，那這主要是因為我們一個 4KB(page size) 區塊對應一個獨立的記憶體或設備，跨過這個邊界可能會導致地址被映射到非法讀寫記憶體區段或是不同的設備，這會造成無法預期行為，也不是應該出現行為，如果真要跨你得拆成兩次傳輸，而今天只有 INCR mode 會有跨過行為。
 ```verilog
 constraint Memory_boundary_4KB_constraint {
   (AWVALID == 1'b1) && (AWBURST == `INCR)
@@ -227,7 +233,7 @@ generate
 endgenerate
 ```
 
-### **6.3 AWBURST=INCR; AWSIZE=0,1,2; AWLEN=0~15; Address unaligned**
+### **6.3 AWBURST=INCR; AWSIZE=0,1,2; AWLEN=0~15; Address aligned**
 ```verilog
 generate
   for (genvar AWSIZE = 0; AWSIZE <= 2; AWSIZE++) begin: INCR_ALIGNED_AWSIZE
@@ -312,7 +318,7 @@ generate
 endgenerate
 ```
 
-### **6.8 ARBURST=INCR; ARSIZE=0,1,2; ARLEN=0~15; Address unaligned**
+### **6.8 ARBURST=INCR; ARSIZE=0,1,2; ARLEN=0~15; Address aligned**
 ```verilog
 generate
   for (genvar ARSIZE = 0; ARSIZE <= 2; ARSIZE++) begin: INCR_ALIGNED_ARSIZE
