@@ -56,7 +56,7 @@ module SRAM_tb;
     ///////////////////////////////////////////////
     // AW
     ///////////////////////////////////////////////
-
+    // 6.1
     generate
         for (genvar AWSIZE = 0; AWSIZE <= 2; AWSIZE++) begin: FIXED_ALIGNED_AWSIZE
             for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
@@ -70,7 +70,7 @@ module SRAM_tb;
             end
         end
     endgenerate
-
+    // 6.2
     generate
         for (genvar AWSIZE = 1; AWSIZE <= 2; AWSIZE++) begin: FIXED_UNALIGNED_AWSIZE
             for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
@@ -84,7 +84,7 @@ module SRAM_tb;
             end
         end
     endgenerate
-
+    // 6.3
     generate
         for (genvar AWSIZE = 0; AWSIZE <= 2; AWSIZE++) begin: INCR_ALIGNED_AWSIZE
             for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
@@ -98,7 +98,7 @@ module SRAM_tb;
             end
         end
     endgenerate
-
+    // 6.4
     generate
         for (genvar AWSIZE = 1; AWSIZE <= 2; AWSIZE++) begin: INCR_UNALIGNED_AWSIZE
             for (genvar AWLEN = 0; AWLEN <= 15; AWLEN++) begin: _AWLEN
@@ -120,7 +120,7 @@ module SRAM_tb;
                     @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
                         vif.AWVALID && vif.AWREADY
                         |->
-                        (vif.AWBURST == `INCR) && (vif.AWADDR % (2 ** AWSIZE) == 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
+                        (vif.AWBURST == `WRAP) && (vif.AWADDR % (2 ** AWSIZE) == 0) && (vif.AWSIZE == AWSIZE) && (vif.AWLEN == AWLEN)
                     )
                 );
             end
@@ -194,7 +194,7 @@ module SRAM_tb;
                     @(posedge vif.ACLK) disable iff (~vif.ARESETn) (
                         vif.ARVALID && vif.ARREADY
                         |->
-                        (vif.ARBURST == `INCR) && (vif.ARADDR % (2 ** ARSIZE) == 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
+                        (vif.ARBURST == `WRAP) && (vif.ARADDR % (2 ** ARSIZE) == 0) && (vif.ARSIZE == ARSIZE) && (vif.ARLEN == ARLEN)
                     )
                 );
             end
