@@ -1,25 +1,21 @@
-# **AXI4 SRAM**
+# **SRAM with AXI4 interface**
 
-## **1. Overview**
+## **1. Schematic**
 ![schematic](https://github.com/user-attachments/assets/9412df90-546e-4b99-84bd-d69ea91bd3f3)
 
 
-## **2. SRAM specification**
+## **2. Feature**
 
-| Feature               | Details           |
-|-----------------------|-------------------|
-| SRAM Size             | 16384 words       |
-| Interface             | AXI4              |
-| Address Size          | 4 bytes           |
-| Data Size             | 4 bytes           |
-| AxBURST               | FIXED, INCR, WRAP |
-| AxSIZE                | 0, 1, 2           |
-| AxLEN                 | 0 ~ 15            |
-
+* SRAM size 64KB
+* Support 32 bits address bus and 32 bits data bus
+* `Fixed`, `INCR` and `WRAP` burst type support
+* Supports burst transfers of 1-16 beats for FIXED and INCR burst type and 2, 4, 8, 16 beats for WRAP burst type
+* Unaligned address access support
+* Narrow transfer support
 
 ## **3. Verification target**
 
-先前課程設計的 SRAM wrapper 不支援 narrow transfer 和 unaligned transfer，AxBURST 也僅支援 INCR mode，AxLEN 支援 0 和 3， 後續修改支援 narrow transfer 和 unaligned Transfer，並且 AxLEN 的擴展至 0 到 15。同時，AxBURST 的也支援 FIXED、INCR 和 WRAP 三種 mode。
+先前課程設計的 SRAM wrapper 不支援 narrow transfer 和 unaligned transfer，AxBURST 也僅支援 INCR burst type，AxLEN 支援 0 和 3， 後續修改支援 narrow transfer 和 unaligned transfer，並且 AxLEN 的擴展至 0 到 15。同時，AxBURST 的也支援 FIXED、INCR 和 WRAP 三種 burst type。
 
 根據設計改進，歸納出以下驗證目標：
 
@@ -29,7 +25,7 @@
 | INCR    | 0, 1, 2    | 0 ~ 15      | Aligned, unaligned  |
 | WRAP    | 0, 1, 2    | 1, 3, 7, 15 | Aligned             |
 
-在驗證 WRAP mode 時，AxLEN 僅支援 1, 3, 7, 15，並且不包含 unaligned transfer。這是基於 [AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>) WRAP 中的限制：
+在驗證 WRAP burst type 時，AxLEN 僅支援 1, 3, 7, 15，並且不包含 unaligned transfer。這是基於 [AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>) WRAP 中的限制：
 
 1. The start address must be aligned to the size of each transfer.
 2. The length of the burst must be 2, 4, 8, or 16 transfers.
@@ -47,7 +43,7 @@
 
 #### **第一筆 Transaction**
 - **AWBURST**：`INCR`
-- **AWSIZE**：`0`（每筆寫入資料為 1 byte，屬於 Narrow Transfer）
+- **AWSIZE**：`0`（每筆寫入資料為 1 byte，屬於 narrow transfer）
 - **AWLEN**：`5`（傳輸 6 筆資料）
 
 其中 WSTRB 是由 tb 控制，用於拉起有效的 byte lane。詳細說明可參考 [AXI4 spec A3.4.1](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>)，描述 write strobe 和 narrow transfer 的機制。
@@ -71,7 +67,7 @@
 - **AWSIZE**：`2`（每筆寫入資料為 4 bytes）
 - **AWLEN**：`1`（傳輸 2 筆資料）
 
-由於前一筆資料寫到 `mem[5]`，本次 Transaction 從 `mem[6]` 開始。屬於 **Unaligned Transfer**。
+由於前一筆資料寫到 `mem[5]`，本次 Transaction 從 `mem[6]` 開始。屬於 **unaligned transfer**。
 
 | Transfer    | ADDR | WSTRB | Description |
 |:-----------:|:----:|:--------:|:--------:|
@@ -100,7 +96,7 @@
 
 #### **第四筆 Transaction**
 - **AWBURST**：`WRAP`
-- **AWSIZE**：`1`（每筆寫入資料為 2 bytes，屬於 Narrow Transfer）
+- **AWSIZE**：`1`（每筆寫入資料為 2 bytes，屬於 narrow transfer）
 - **AWLEN**：`3`（傳輸 4 筆資料）
 
 由於前一筆資料寫到 `mem[b]`，本次 Transaction 從 `mem[c]` 開始。WRAP 模式在到達最高地址後會繞回最低地址。
@@ -174,11 +170,8 @@ constraint AxLEN_constraint {
 假設起始地址位於 0x0000 ~ 0x0fff 之中，如果今天突發會到 0x1xxx 是要被禁止的，那這主要是因為我們一個 4KB(page size) 區塊對應一個獨立的記憶體或設備，跨過這個邊界可能會導致地址被映射到非法讀寫記憶體區段或是不同的設備，這會造成無法預期行為，也不是應該出現行為，如果真要跨你得拆成兩次傳輸，而今天只有 INCR mode 會有跨過行為。
 ```verilog
 constraint Memory_boundary_4KB_constraint {
-  (AWVALID == 1'b1) && (AWBURST == `INCR)
-  -> (AWADDR % 4096) + (2 ** AWSIZE) * (AWLEN + 1) < 4096;
- 
-  (ARVALID == 1'b1) && (ARBURST == `INCR)  
-  -> (ARADDR % 4096) + (2 ** ARSIZE) * (ARLEN + 1) < 4096;
+  (AWVALID == 1'b1) && (AWBURST == `INCR) -> (AWADDR % 4096) + (2 ** AWSIZE) * (AWLEN + 1) < 4096;
+  (ARVALID == 1'b1) && (ARBURST == `INCR) -> (ARADDR % 4096) + (2 ** ARSIZE) * (ARLEN + 1) < 4096;
 }
 ```
 
@@ -368,3 +361,7 @@ generate
   end
 endgenerate
 ```
+
+## **7. Reference**
+[AMBA®AXI™and ACE™Protocol Specification](<http://www.gstitt.ece.ufl.edu/courses/fall15/eel4720_5721/labs/refs/AXI4_specification.pdf>) \
+[Arm community](<https://community.arm.com/>)
