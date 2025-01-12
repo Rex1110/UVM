@@ -20,7 +20,7 @@ class driver extends uvm_driver #(transaction);
             seq_item_port.get_next_item(trans);
                 vif.data_queue = trans.data_queue; 
                 vif.reset <= trans.reset;
-                for (int i = 0; i < trans.data_queue.size(); i++) begin
+                foreach (trans.data_queue[i]) begin
                     vif.data  <= trans.data_queue[i];
                     @(posedge vif.clk);
                     if (vif.valid) 
